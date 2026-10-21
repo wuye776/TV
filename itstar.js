@@ -309,6 +309,38 @@ function search(wd, quick) {
 
 // ---------- 播放：把 OSS 上的 playlist 改写成自包含 m3u8 ----------
 
+// UTF-8 -> bytes（不依赖 TextEncoder，QuickJS 里没有）
+function utf8Bytes(str) {
+    const s = encodeURIComponent(String(str));
+    const out = [];
+    for (let i = 0; i < s.length; i++) {
+        const c = s.charAt(i);
+        if (c === '%') {
+            out.push(parseInt(s.substr(i + 1, 2), 16));
+            i += 2;
+        } else {
+            out.push(s.charCodeAt(i));
+        }
+    }
+    return out;
+}
+
+const B64T = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+function b64(bytes) {
+    let out = '';
+    for (let i = 0; i < bytes.length; i += 3) {
+        const b0 = bytes[i];
+        const b1 = i + 1 < bytes.length ? bytes[i + 1] : -1;
+        const b2 = i + 2 < bytes.length ? bytes[i + 2] : -1;
+        out += B64T.charAt(b0 >> 2);
+        out += B64T.charAt(((b0 & 3) << 4) | (b1 < 0 ? 0 : b1 >> 4));
+        out += b1 < 0 ? '=' : B64T.charAt(((b1 & 15) << 2) | (b2 < 0 ? 0 : b2 >> 6));
+        out += b2 < 0 ? '=' : B64T.charAt(b2 & 63);
+    }
+    return out;
+}
+
 function absolutePlaylist(pl, dir, key) {
     const lines = String(pl).split('\n');
     const out = [];
@@ -367,7 +399,8 @@ function play(flag, id) {
     }
 
     const txt = absolutePlaylist(pl, dir, key);
-    const dataUri = 'data:application/x-mpegURL;charset=UTF-8,' + encodeURIComponent(txt);
+    // 必须 base64：Android DataSchemeDataSource 不做 percent 解码
+    const dataUri = 'data:application/x-mpegURL;base64,' + b64(utf8Bytes(txt));
     return JSON.stringify({ parse: 0, jx: 0, url: dataUri, header: { 'User-Agent': UA } });
 }
 
