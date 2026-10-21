@@ -1,0 +1,23 @@
+{
+  "spider": "",
+  "logo": "",
+  "sites": [
+    {
+      "key": "semao376jsd",
+      "name": "色猫375·零服务器",
+      "type": 3,
+      "api": "https://cdn.jsdelivr.net/gh/wuye776/TV@main/semao375.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "ext": "{\"base\":\"https://www.semao376.xyz\"}"
+    }
+  ],
+  "lives": [],
+  "parses": [],
+  "flags": [],
+  "ads": [],
+  "headers": {},
+  "wallpaper": "",
+  "warningText": ""
+}
