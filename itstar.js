@@ -1,5 +1,5 @@
 // ============================================================
-// 影视仓 / TVBox type:3 零服务器 spider  v2
+// 影视仓 / TVBox type:3 零服务器 spider  v3
 // 站：m-qat.itstar.tw（本色 Bense，React SPA + App API）
 // 播放：OSS h265 fMP4，key 内联 data URI —— 全程不需要服务器
 // v2 改动：
@@ -16,10 +16,16 @@
 // ============================================================
 
 const DEF_BASE = 'https://m-qat.itstar.tw';
-const OSS = 'https://pkm4-qat-vod-original.oss-accelerate.aliyuncs.com';
+const OSS_HOSTS = [
+    'https://pkm4-qat-vod-original.oss-accelerate-overseas.aliyuncs.com',
+    'https://pkm4-qat-vod-original.oss-accelerate.aliyuncs.com'
+];
+let OSS = OSS_HOSTS[0];
+let OSS_IDX = 0;
 const PIC = 'https://pkm4-qat-vod-preview.oss-accelerate.aliyuncs.com';
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const DEVICE_ID = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
+const DEF_TOKEN = 'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMjc3MDc5ODQ5MjUwNTg2NjI3LWExYjJjM2Q0ZTVmNmE3YjhjOWQwZTFmMmEzYjRjNWQ2Iiwic2l0ZSI6Im1lbWJlciIsInJvbGUiOjAsInZlcnNpb24iOiIxLjIuNDQxIiwic291cmNlIjoiY29va2llIiwiaXAiOiIxMjAuMjA4LjIzNS44MSIsInNob3dfaWQiOiJGUlktNTA2OTEzMyIsImV4cCI6MTc5MzMwOTYzNCwiaWF0IjoxNzkyNTg5NjM0LCJpc3MiOiJOb3ZhIiwibmJmIjoxNzkyNTg5NjM0LCJzdWIiOiIyNzcwNzk4NDkyNTA1ODY2MjctYTFiMmMzZDRlNWY2YTdiOGM5ZDBlMWYyYTNiNGM1ZDYifQ.6MR5Sd2d362NQnvtRrva3yuUD_h_xkwBcb6nOdrV9DbVlIJ1RJcysOlB2OhubMSXPsB9UGMY-BEFAW1HS_iEgQ';
 const CONECTION = 'KXUEmafncA8rBXPkhQs2wcKBargtbV9+bZREhW8MY1d4B8FFFkH5wsMMQpmchQfc';
 
 // ---------- 分类（左侧一级） ----------
@@ -103,24 +109,31 @@ const TAGS = [
 ];
 
 let BASE = DEF_BASE;
+let EST_FAIL_AT = 0;
+let LAST_ERR = '';
+let LAST_RAW = '';
+let PLCACHE = {};
 let TOKEN = '';
 let TOKEN_EXP = 0;
 
 // ---------- 网络 ----------
 
 function request(url, options) {
-    const o = Object.assign({ async: false, timeout: 35 }, options || {});
+    const o = Object.assign({ async: false }, options || {});
     o.async = false;
-    if (typeof http === 'function') return http(url, o);
-    if (typeof req === 'function') return req(url, o);
-    if (typeof net !== 'undefined' && net && typeof net.http === 'function') return net.http(url, o);
-    throw new Error('no http binding');
+    let r;
+    if (typeof http === 'function') r = http(url, o);
+    if ((r === undefined || r === null) && typeof req === 'function') r = req(url, o);
+    if ((r === undefined || r === null) && typeof net !== 'undefined' && net && typeof net.http === 'function') r = net.http(url, o);
+    if (r === undefined) throw new Error('no http binding');
+    return r;
 }
 
 function bodyOf(res) {
     if (!res) return '';
+    if (typeof res === 'string') return res;
     if (res.ok === false) throw new Error('http ' + res.status);
-    const c = res.content;
+    const c = res.content === undefined ? res.body : res.content;
     if (c === undefined || c === null) return '';
     if (typeof c === 'string') return c;
     try { return String(c); } catch (e) { return ''; }
@@ -128,7 +141,10 @@ function bodyOf(res) {
 
 function fetchOnce(url, headers) {
     const res = request(url, { headers: headers || {} });
-    return bodyOf(res);
+    const b = bodyOf(res);
+    const ks = res ? (typeof res === 'object' ? Object.keys(res).slice(0, 6).join(',') : '-') : 'NULL';
+    LAST_RAW = 'C' + (res ? res.code : 'X') + '|K' + ks + '|L' + (b ? b.length : 0);
+    return b;
 }
 
 function fetchText(url, headers, tries) {
@@ -154,9 +170,14 @@ function apiHeaders() {
 // ---------- 鉴权 ----------
 
 function doEstablish() {
+    const now0 = Math.floor(Date.now() / 1000);
+    if (EST_FAIL_AT && now0 - EST_FAIL_AT < 45) {
+        LAST_ERR = 'E:EST_COOL';
+        return TOKEN;
+    }
     const body = '{"device_id":"' + DEVICE_ID + '","device_type":"cookie","invite_code":"",' +
         '"os_version":"iOS 17.5","phone_device":"iPhone 15 Pro","version":"1.2.441","is_first":1}';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
         try {
             const res = request(BASE + '/api/v1/member/establish', {
                 method: 'POST',
@@ -170,12 +191,18 @@ function doEstablish() {
             });
             const j = JSON.parse(bodyOf(res) || '{}');
             if (j && j.access_token) {
-                TOKEN = s(j.access_token);
+                TOKEN = j.access_token;
                 TOKEN_EXP = parseInt(j.expires_at, 10) || 0;
+                EST_FAIL_AT = 0;
+                LAST_ERR = '';
                 return TOKEN;
             }
-        } catch (e) { }
+            LAST_ERR = 'E:EST_NO_TOKEN';
+        } catch (e) {
+            LAST_ERR = 'E:EST_HTTP';
+        }
     }
+    EST_FAIL_AT = Math.floor(Date.now() / 1000);
     return TOKEN;
 }
 
@@ -187,22 +214,43 @@ function token() {
 
 function apiGet(path) {
     const url = BASE + '/api/v1' + path;
+    const tk0 = token();
+    if (!tk0) {
+        LAST_ERR = LAST_ERR || 'E:NO_TOKEN';
+        return {};
+    }
     for (let i = 0; i < 2; i++) {
-        const tk = token();
-        if (!tk) continue;
+        const tk = i === 0 ? tk0 : token();
+        if (!tk) break;
         try {
-            const t = fetchOnce(url, {
-                'User-Agent': UA, 'Referer': BASE + '/',
-                'AuthDog': 'Bearer ' + tk, 'Accept': 'application/json'
+            const res = request(url, {
+                headers: {
+                    'User-Agent': UA, 'Referer': BASE + '/',
+                    'AuthDog': 'Bearer ' + tk, 'Accept': 'application/json'
+                }
             });
+            const t = bodyOf(res);
+            const ks = res ? (typeof res === 'object' ? Object.keys(res).slice(0, 5).join(',') : '-') : 'NULL';
+            LAST_RAW = 'C' + (res ? res.code : 'X') + '|K' + ks + '|S' + (res ? res.status : 'X') + '|L' + (t ? t.length : 0) + '|' +
+                String(t || 'NIL').slice(0, 50).replace(/[^\x20-\x7e]/g, '.');
             const j = JSON.parse(t || '{}');
             if (j && j.error && j.error.code) {
-                TOKEN = ''; TOKEN_EXP = 0;
+                LAST_ERR = 'E:API_' + j.error.code;
+                TOKEN = '';
+                TOKEN_EXP = 0;
                 continue;
+            }
+            if (!j || !j.data) {
+                const raw = t ? String(t) : 'NIL';
+                LAST_ERR = 'D' + raw.length + ':' + raw.slice(0, 40).replace(/[^\x20-\x7e]/g, '.');
+            } else {
+                LAST_ERR = '';
             }
             return j || {};
         } catch (e) {
-            TOKEN = ''; TOKEN_EXP = 0;
+            LAST_ERR = 'E:HTTP';
+            TOKEN = '';
+            TOKEN_EXP = 0;
         }
     }
     return {};
@@ -231,6 +279,29 @@ function fixPic(p) {
     return PIC + u;
 }
 
+function playId(v) {
+    const id = s(v.id);
+    const pth = s(v.h265_url);
+    const key = s(v.h265_key);
+    if (!pth) return id;
+    return id + '~' + b64url(pth) + '~' + b64url(key);
+}
+
+function parsePlayId(raw) {
+    const t = s(raw);
+    const i = t.indexOf('~');
+    if (i < 0) return null;
+    const parts = t.split('~');
+    if (parts.length < 2) return null;
+    const id = parts[0];
+    let pth = '';
+    let key = '';
+    try { pth = b64dec(parts[1]); } catch (e) { pth = ''; }
+    try { key = parts.length > 2 ? b64dec(parts[2]) : ''; } catch (e) { key = ''; }
+    if (!pth) return null;
+    return { id: id, path: pth, key: key };
+}
+
 function toVod(v) {
     const id = s(v.id);
     return {
@@ -245,7 +316,7 @@ function toVod(v) {
         vod_director: '',
         vod_content: s(v.title),
         vod_play_from: 'H265',
-        vod_play_url: '正片$' + id
+        vod_play_url: '正片$' + playId(v)
     };
 }
 
@@ -265,6 +336,14 @@ function init(ext) {
     if (o && o.base) BASE = String(o.base).replace(/\/+$/, '');
     TOKEN = '';
     TOKEN_EXP = 0;
+    EST_FAIL_AT = 0;
+    LAST_ERR = '';
+    if (!TOKEN) { TOKEN = DEF_TOKEN; }
+    if (o && o.token) {
+        TOKEN = String(o.token).replace(/^Bearer\s+/i, '');
+        TOKEN_EXP = parseInt(o.expires_at, 10) || 0;
+    }
+    return '';
 }
 
 // ---------- 筛选 ----------
@@ -306,20 +385,33 @@ function home(filter) {
     return JSON.stringify({ class: cls, filters: buildFilters(), list: homeList() });
 }
 
+function diagList(msg) {
+    const m = msg || LAST_RAW || LAST_ERR || 'E:EMPTY';
+    return [{
+        vod_id: '0',
+        vod_name: '无数据 ' + m,
+        vod_pic: '',
+        vod_remarks: '下拉刷新或稍等再进',
+        vod_year: '', vod_area: '', vod_lang: '',
+        vod_actor: '', vod_director: '',
+        vod_content: '诊断码 ' + m,
+        vod_play_from: 'H265',
+        vod_play_url: '正片$0'
+    }];
+}
+
 function homeList() {
     const qs = [
         '/video?state=2&current=1&pageSize=30',
-        '/video?state=2&current=1&pageSize=18',
-        '/video?state=2&current=1&pageSize=12',
-        '/video?state=2&current=1&pageSize=8'
+        '/video?state=2&current=1&pageSize=12'
     ];
     for (let i = 0; i < qs.length; i++) {
         try {
             const list = listOf(apiGet(qs[i]));
             if (list.length) return list;
-        } catch (e) { }
+        } catch (e) { LAST_ERR = 'E:EX'; }
     }
-    return [];
+    return diagList();
 }
 
 function homeVod() {
@@ -345,7 +437,8 @@ function category(tid, pg, filter, extend) {
     let j = {};
     try { j = apiGet(q); } catch (err) { j = {}; }
     const total = totalOf(j);
-    const list = listOf(j);
+    let list = listOf(j);
+    if (!list.length) list = diagList();
     let pagecount = 9999;
     if (total) pagecount = Math.ceil(total / 30);
     else if (list.length < 30) pagecount = page;
@@ -423,6 +516,35 @@ function search(wd, quick) {
 
 // ---------- 播放 ----------
 
+function b64url(str) {
+    const bb = utf8Bytes(s(str));
+    return b64(bb).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+const B64T = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function b64dec(str) {
+    let t = s(str).replace(/-/g, '+').replace(/_/g, '/');
+    while (t.length % 4) t += '=';
+    const bytes = [];
+    let buf = 0, bits = 0;
+    for (let i = 0; i < t.length; i++) {
+        const c = t.charAt(i);
+        if (c === '=') break;
+        const v = B64T.indexOf(c);
+        if (v < 0) continue;
+        buf = (buf << 6) | v; bits += 6;
+        if (bits >= 8) { bits -= 8; bytes.push((buf >> bits) & 255); }
+    }
+    let out = '';
+    for (let i = 0; i < bytes.length; i++) out += String.fromCharCode(bytes[i]);
+    return out;
+}
+
+function ossUrl(path) {
+    const q = s(path).replace(/^\/+/, '');
+    return OSS + '/' + q;
+}
+
 function b64(bytes) {
     const T = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
     let out = '';
@@ -498,13 +620,17 @@ function absolutePlaylist(pl, dir, key) {
 
 // 死磕完整 playlist：必须见到 #EXT-X-ENDLIST
 function fetchPlaylistHard(url, tries) {
-    const n = tries || 6;
+    const n = tries || 3;
+    const rel = s(url).replace(/^https?:\/\/[^/]+\//, '');
     let best = '';
     for (let i = 0; i < n; i++) {
+        const h = OSS_HOSTS[i % OSS_HOSTS.length];
+        const u = h === OSS ? url : (h + '/' + rel);
         try {
-            const t = fetchOnce(url, { 'User-Agent': UA });
+            const t = fetchOnce(u, { 'User-Agent': UA });
             if (t && t.indexOf('#EXTM3U') >= 0) {
                 best = t;
+                OSS = h; OSS_IDX = i % OSS_HOSTS.length;
                 if (t.indexOf('#EXT-X-ENDLIST') >= 0) return t;
             }
         } catch (e) { }
@@ -513,46 +639,42 @@ function fetchPlaylistHard(url, tries) {
 }
 
 function play(flag, id) {
-    let vid = trim(id);
-    if (/^https?:\/\//.test(vid)) return JSON.stringify({ parse: 0, jx: 0, url: vid });
-    if (!vid) return JSON.stringify({ parse: 0, jx: 0, url: '' });
+    let raw = trim(id);
+    if (/^https?:\/\//.test(raw)) return JSON.stringify({ parse: 0, jx: 0, url: raw });
+    if (!raw) return JSON.stringify({ parse: 0, jx: 0, url: '' });
 
     const wantH264 = trim(flag).toLowerCase().indexOf('h264') >= 0;
-    const bare = vid.replace(/^h264:/, '');
+    let bare = raw.replace(/^h264:/, '');
 
+    // 快路径：id 自带播放参数，零 API 调用
+    let meta = parsePlayId(bare);
     let v = null;
-    try { v = getVideo(bare); } catch (e) { v = null; }
-    if (!v) return JSON.stringify({ parse: 0, jx: 0, url: '' });
-
-    if (wantH264) {
-        const hp = s(v.highres_url);
-        if (hp) {
-            const hu = OSS + '/' + (hp.charAt(0) === '/' ? hp.slice(1) : hp);
-            return JSON.stringify({ parse: 0, jx: 0, url: hu, header: { 'User-Agent': UA } });
-        }
+    if (!meta) {
+        bare = bare.replace(/~.*$/, '');
+        try { v = getVideo(bare); } catch (e) { v = null; }
+        if (!v) return JSON.stringify({ parse: 0, jx: 0, url: '' });
+        meta = { id: s(v.id), path: s(v.h265_url), key: s(v.h265_key) };
     }
 
-    const key = s(v.h265_key);
-    const path = s(v.h265_url);
+    const key = meta.key;
+    const path = meta.path;
     if (!path) {
-        const hp = s(v.highres_url);
-        if (hp) return JSON.stringify({ parse: 0, jx: 0, url: OSS + '/' + (hp.charAt(0) === '/' ? hp.slice(1) : hp), header: { 'User-Agent': UA } });
+        const hp = v ? s(v.highres_url) : '';
+        if (hp) return JSON.stringify({ parse: 0, jx: 0, url: ossUrl(hp), header: { 'User-Agent': UA } });
         return JSON.stringify({ parse: 0, jx: 0, url: '' });
     }
 
     const dir = path.indexOf('/') >= 0 ? path.slice(0, path.lastIndexOf('/')) : '';
-    const plUrl = OSS + '/' + (path.charAt(0) === '/' ? path.slice(1) : path);
+    const plUrl = ossUrl(path);
 
-    const pl = fetchPlaylistHard(plUrl, 6);
+    const c0 = PLCACHE[meta.id] || PLCACHE[bare] || null;
+    const pl = (c0 && c0.pl) ? c0.pl : fetchPlaylistHard(plUrl, 3);
     if (!pl) {
-        // 兜底：给 h264 原链，壳若认 key:// 还能救
-        const hp = s(v.highres_url);
-        if (hp) return JSON.stringify({ parse: 0, jx: 0, url: OSS + '/' + (hp.charAt(0) === '/' ? hp.slice(1) : hp), header: { 'User-Agent': UA } });
         return JSON.stringify({ parse: 0, jx: 0, url: plUrl, header: { 'User-Agent': UA } });
     }
 
     const txt = absolutePlaylist(pl, dir, key);
-    const dataUri = 'data:application/x-mpegURL;base64,' + b64(utf8Bytes(txt));
+    const dataUri = 'data:application/vnd.apple.mpegurl;base64,' + b64(utf8Bytes(txt));
     return JSON.stringify({ parse: 0, jx: 0, url: dataUri, header: { 'User-Agent': UA } });
 }
 
