@@ -1,0 +1,20 @@
+{
+  "spider": "",
+  "logo": "",
+  "sites": [
+    {
+      "key": "itstar",
+      "name": "本色",
+      "type": 3,
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@main/itstar.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+    }
+  ],
+  "lives": [],
+  "parses": [],
+  "flags": [],
+  "ads": []
+}
