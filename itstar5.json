@@ -1,0 +1,60 @@
+{
+  "spider": "",
+  "logo": "",
+  "sites": [
+    {
+      "key": "itstar1",
+      "name": "本色·主",
+      "type": 3,
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@b9c1e2eab0a0fe355bd4eaea4519e1706893cc75/itstar.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+    },
+    {
+      "key": "itstar2",
+      "name": "本色·备1",
+      "type": 3,
+      "api": "https://gcore.jsdelivr.net/gh/wuye776/TV@b9c1e2eab0a0fe355bd4eaea4519e1706893cc75/itstar.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+    },
+    {
+      "key": "itstar3",
+      "name": "本色·备2",
+      "type": 3,
+      "api": "https://ghproxy.net/https://raw.githubusercontent.com/wuye776/TV/b9c1e2eab0a0fe355bd4eaea4519e1706893cc75/itstar.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+    },
+    {
+      "key": "itstar4",
+      "name": "本色·备3",
+      "type": 3,
+      "api": "https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/b9c1e2eab0a0fe355bd4eaea4519e1706893cc75/itstar.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+    },
+    {
+      "key": "itstar5",
+      "name": "本色·备4",
+      "type": 3,
+      "api": "https://cdn.jsdelivr.net/gh/wuye776/TV@b9c1e2eab0a0fe355bd4eaea4519e1706893cc75/itstar.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+    }
+  ],
+  "lives": [],
+  "parses": [],
+  "flags": [],
+  "ads": []
+}
