@@ -28,9 +28,20 @@ const API2 = 'https://apissss.xn--d9u11dw2l41at78afwi.xn--fiqs8s';
 const WEB = 'https://4do.4do9dm.com:51888';
 const CHANNEL = 'vvmmyjs';
 const LIMIT = 24;
-// .live 域名的 variant 会被网关 302 到 /hls/cpa/v2/stream.m3u8（CPA 广告垫片）；
-// .com 域名的 master 指向 media-hls 真流路径，且 BANDWIDTH 逐秒变化（真直播）
-const LIVE_M3U8 = 'https://edge-hls.doppiocdn.com/hls/{id}/master/{id}_auto.m3u8?playlistType=lowLatency';
+// 直播多线路：同一个 id，三条 CDN 家族轮着取 master。
+//   .live → cdn77.org（156.146.x），国内可达，实测 200
+//   .org  → 同样指向 media-hls.doppiocdn.org，国内可达，实测 200
+//   .com  → Cloudflare（104.17.x），国内 SNI 常被 reset，放最后当备胎
+// 上游对匿名/机房 IP 会把 variant 302 到 /hls/cpa/v2/stream.m3u8（CPA 垫片），
+// 真流带 #EXT-X-MOUFLON:PSCH 保护令牌，客户端拿不到 ps=true 配置就只能是垫片。
+// 所以这里不赌单条，给三条线 + 一条网页兜底，哪个通点哪个。
+const LIVE_LINES = [
+    'https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8',
+    'https://edge-hls.doppiocdn.org/hls/{id}/master/{id}_auto.m3u8',
+    'https://edge-hls.doppiocdn.com/hls/{id}/master/{id}_auto.m3u8',
+    'https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8?playlistType=lowLatency'
+];
+const LIVE_WEB = 'https://4do.4do9dm.com:51888';
 
 // ---------------- token（指纹匿名登录，TTL≈1860s，内存缓存自续） ----------------
 let TK = '';
@@ -406,7 +417,11 @@ function detail(id) {
             vod_pic: '',
             vod_content: '4do 美女直播（stripchat 源，边玩边聊实时流）\n直播间：' + lid,
             vod_play_from: '4do直播',
-            vod_play_url: '直播$' + vid
+            vod_play_url: '线路①·live$' + vid + '@0'
+                + '#线路②·org$' + vid + '@1'
+                + '#线路③·com$' + vid + '@2'
+                + '#线路④·低延迟$' + vid + '@3'
+                + '#备用·网页$' + vid + '@9'
         };
         // 拉一次详情补标题/封面，失败不阻塞
         const d = api('POST', '/api/live/detail', { id: parseInt(lid, 10) }, true);
@@ -459,10 +474,25 @@ function search(key, quick, pg) {
 function play(flag, id, vipFlags) {
     const vid = String(id || '');
     const hdr = JSON.stringify({ 'User-Agent': UA });
-    // 直播：拼接 doppiocdn 边缘 HLS（实测免 token 200）
-    if (vid.charAt(0) === 'L' && /^\d+$/.test(vid.substring(1))) {
-        const u = LIVE_M3U8.replace(/\{id\}/g, vid.substring(1));
-        return JSON.stringify({ parse: 0, playUrl: '', url: u, header: hdr });
+    // 直播：id 形如 L<liveId> 或 L<liveId>@<线路号>
+    if (vid.charAt(0) === 'L') {
+        let raw = vid.substring(1), ln = 0;
+        const at = raw.indexOf('@');
+        if (at > 0) { ln = parseInt(raw.substring(at + 1), 10) || 0; raw = raw.substring(0, at); }
+        if (/^\d+$/.test(raw)) {
+            if (ln === 9) {
+                // 网页兜底：优先拿官方 detail 里的 player.url（真播放器 iframe），
+                // 拿不到就退到 4do 网页直播页。parse:1 交给客户端 webview。
+                let w = '';
+                const d = api('POST', '/api/live/detail', { id: parseInt(raw, 10) }, true);
+                if (d && d.player && d.player.url) w = String(d.player.url);
+                if (!w) { w = LIVE_WEB + '/live/' + raw; }
+                return JSON.stringify({ parse: 1, playUrl: w, url: w, header: hdr });
+            }
+            const idx = (ln >= 0 && ln < LIVE_LINES.length) ? ln : 0;
+            const u = LIVE_LINES[idx].replace(/\{id\}/g, raw);
+            return JSON.stringify({ parse: 0, playUrl: '', url: u, header: hdr });
+        }
     }
     const d = api('GET', '/api/v2/home/user/video/play/url?id=' + encodeURIComponent(vid) + '&channel=' + CHANNEL, null, true);
     const hdr2 = JSON.stringify({ 'User-Agent': UA, 'Referer': WEB + '/', 'Origin': WEB });
