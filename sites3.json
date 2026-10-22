@@ -6,31 +6,34 @@
       "key": "sm375jsd1",
       "name": "色猫375·主",
       "type": 3,
-      "api": "https://cdn.jsdelivr.net/gh/wuye776/TV@main/semao375.js",
+      "api": "https://cdn.jsdelivr.net/gh/wuye776/TV@784d9740b543d68feab09010a3ea3751f8b1a49a/semao375.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 0,
-      "ext": "{\"base\":\"https://www.semao376.xyz\"}"
+      "ext": "{\"base\":\"https://www.semao378.xyz\"}",
+      "timeout": 60
     },
     {
       "key": "sm375jsd2",
       "name": "色猫375·备1",
       "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@main/semao375.js",
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@784d9740b543d68feab09010a3ea3751f8b1a49a/semao375.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 0,
-      "ext": "{\"base\":\"https://www.semao376.xyz\"}"
+      "ext": "{\"base\":\"https://www.semao378.xyz\"}",
+      "timeout": 60
     },
     {
       "key": "sm375jsd3",
       "name": "色猫375·备2",
       "type": 3,
-      "api": "https://gcore.jsdelivr.net/gh/wuye776/TV@main/semao375.js",
+      "api": "https://gcore.jsdelivr.net/gh/wuye776/TV@784d9740b543d68feab09010a3ea3751f8b1a49a/semao375.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 0,
-      "ext": "{\"base\":\"https://www.semao376.xyz\"}"
+      "ext": "{\"base\":\"https://www.semao378.xyz\"}",
+      "timeout": 60
     }
   ],
   "lives": [],
