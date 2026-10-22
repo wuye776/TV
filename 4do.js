@@ -1,33 +1,34 @@
 // ============================================================
-// 影视仓 / TVBox · QuickJS spider —— 4do（vvmmyjs 通道）v2
+// 影视仓 / TVBox · QuickJS spider —— 4do（vvmmyjs 通道）v3
 // API：xn6.xn6oce.com:25118 · Web：4do.4do9dm.com:51888
 //
 // 形态：type:3，api 填本文件 URL，零服务器
 //   { "key":"4do","name":"4do","type":3,"api":".../4do.js" }
 //
-// v2 全量补齐（实测）：
-//   1. 类目 18 个全量（v1 漏了 新闻357 / 其他269）
-//   2. 标签线：/api/v2/home/public/video/label/list 共 496 个
-//      列表接口 type=label&typeId=<labelId> 可按标签出片（多人运动=572）
-//      type=last&typeId=... 为全站最新池（total 22216）
-//   3. 直播线：POST /api/live/index {page,limit}（需登录，指纹匿名即可）
-//      detail 无 streams，但拼接 doppiocdn 边缘 HLS 实测 200 可播：
-//      https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8
-//      免 token，master 里是多码率，播放器自动选
-//   4. homeVod 改用 /home/index 板块（探花/黑料/日本/ai换脸 各 10 条）
+// v3 增强（2026-10-22 实测取证后落地）：
+//   1. 视频线筛选：时长（videoType=short|long）+ 排序（order=point）
+//      —— 服务端白名单很窄：order 仅 point 生效，其余值一律返空；
+//         year / area 实测被忽略（total 恒定 22216），故不下发，避免空页。
+//   2. 直播线国家筛选：POST /api/live/index body {page,limit,country}
+//      —— countries 列表接口自带 41 国 + 数量，直接作为筛选项源。
+//   3. 分类 18 个 + 标签 496 个（label/list）+ 直播 1 个
 //
-// 加密壳不变：{code,data(b64url),key} = b64url + key 循环 XOR
-// 封面 .jpg.enc 依旧官方端自挂，v1 决策维持：视频条目空 cover
+// v2 已有能力保留：
+//   · 标签线 type=label&typeId=<labelId>
+//   · 直播 HLS：https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8（免 token）
+//   · homeVod 走 /home/index 板块
+//
+// 加密壳：{code,data(b64url),key} = b64url + key 循环 XOR → UTF-8 → JSON
+// 封面：视频 thumb 是 .jpg.enc（AES-256-CBC 密文），QuickJS 无 AES，故留空
 // ============================================================
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 const API = 'https://xn6.xn6oce.com:25118';
+const API2 = 'https://apissss.xn--d9u11dw2l41at78afwi.xn--fiqs8s';
 const WEB = 'https://4do.4do9dm.com:51888';
 const CHANNEL = 'vvmmyjs';
 const LIMIT = 24;
 const LIVE_M3U8 = 'https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8';
-
-let HEADERS = { 'User-Agent': UA, 'Accept': 'application/json', 'Origin': WEB, 'Referer': WEB + '/' };
 
 // ---------------- token（指纹匿名登录，TTL≈1860s，内存缓存自续） ----------------
 let TK = '';
@@ -81,9 +82,8 @@ function dec2(raw) {
         if (env.code !== 200) return null;
         const bytes = b64uBytes(env.data);
         const k = env.key;
-        let s = '';
-        for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i] ^ k.charCodeAt(i % k.length));
-        s = utf8Decode(bytes.map(function (b, i) { return b ^ k.charCodeAt(i % k.length); }));
+        const plain = bytes.map(function (b, i) { return b ^ k.charCodeAt(i % k.length); });
+        const s = utf8Decode(plain);
         try { return JSON.parse(s.replace(/^\s+|\s+$/g, '')); } catch (e) { return s; }
     }
     if (env.code === 200 || env.code === 0) return env.data;
@@ -92,7 +92,7 @@ function dec2(raw) {
 
 // ---------------- 网络：强制同步 ----------------
 function request(url, options) {
-    const o = Object.assign({ async: false, headers: HEADERS }, options || {});
+    const o = Object.assign({ async: false }, options || {});
     o.async = false;
     if (typeof http === 'function') return http(url, o);
     if (typeof req === 'function') return req(url, o);
@@ -107,7 +107,15 @@ function bodyOf(r) {
 }
 
 // api(method, path, bodyObj, needAuth) → 解密后的业务对象；失败返回 null
+// 主 API 挂了自动切备用域名再试一次
 function api(method, path, bodyObj, needAuth) {
+    let out = api1(API, method, path, bodyObj, needAuth);
+    if (out) return out;
+    out = api1(API2, method, path, bodyObj, needAuth);
+    return out;
+}
+
+function api1(host, method, path, bodyObj, needAuth) {
     const h = {
         'User-Agent': UA,
         'Accept': 'application/json',
@@ -125,7 +133,7 @@ function api(method, path, bodyObj, needAuth) {
         h['Authorization'] = 'Bearer ' + tk;
     }
     let raw = '';
-    try { raw = bodyOf(request(API + path, { method: method, headers: h, body: body })); } catch (e) { return null; }
+    try { raw = bodyOf(request(host + path, { method: method, headers: h, body: body })); } catch (e) { return null; }
     if (!raw) return null;
     const out = dec2(raw);
     if (out) return out;
@@ -135,7 +143,7 @@ function api(method, path, bodyObj, needAuth) {
         const tk = getTok();
         if (!tk) return null;
         h['Authorization'] = 'Bearer ' + tk;
-        try { raw = bodyOf(request(API + path, { method: method, headers: h, body: body })); } catch (e) { return null; }
+        try { raw = bodyOf(request(host + path, { method: method, headers: h, body: body })); } catch (e) { return null; }
         return dec2(raw);
     }
     return null;
@@ -151,8 +159,18 @@ function getTok() {
             headers: { 'User-Agent': UA, 'Accept': 'application/json', 'Content-Type': 'application/json', 'Origin': WEB, 'Referer': WEB + '/' },
             body: JSON.stringify({ channel: CHANNEL, fingerPrint: fp })
         }));
-    } catch (e) { return ''; }
-    const d = dec2(raw);
+    } catch (e) { }
+    let d = raw ? dec2(raw) : null;
+    if (!d || !d.accessToken) {
+        try {
+            raw = bodyOf(request(API2 + '/api-user/v2/login/fingerprint', {
+                method: 'POST',
+                headers: { 'User-Agent': UA, 'Accept': 'application/json', 'Content-Type': 'application/json', 'Origin': WEB, 'Referer': WEB + '/' },
+                body: JSON.stringify({ channel: CHANNEL, fingerPrint: fp })
+            }));
+            d = raw ? dec2(raw) : null;
+        } catch (e) { }
+    }
     if (d && d.accessToken) {
         TK = d.accessToken;
         const ttl = Number(d.accessTokenTtl) > 0 ? Number(d.accessTokenTtl) : 1800;
@@ -171,7 +189,7 @@ const CATS = [
     ["262", "国产"], ["268", "热门"]
 ];
 
-// 标签兜底：label/list 拉不到时用（实测常见标签，id 均验证过存在）
+// 标签兜底：label/list 拉不到时用（id 均验证过存在）
 const TAG_FALLBACK = [
     ["261", "多人运动"], ["262", "熟女"], ["263", "内衣"], ["287", "偶像艺人"],
     ["288", "恋物癖"], ["290", "情侣"], ["291", "跳舞"], ["293", "偷窥"],
@@ -180,7 +198,21 @@ const TAG_FALLBACK = [
     ["313", "温泉"], ["318", "家教"], ["319", "母亲"], ["321", "赛车女郎"]
 ];
 
-let LB_CACHE = null; // 标签缓存 [{id,title}]
+// 国家码 → 中文（直播 countries 41 国）
+const CC = {
+    CO: '哥伦比亚', US: '美国', IN: '印度', CN: '中国', RO: '罗马尼亚',
+    VN: '越南', BR: '巴西', AR: '阿根廷', RU: '俄罗斯', ZA: '南非',
+    MX: '墨西哥', VE: '委内瑞拉', CL: '智利', KE: '肯尼亚', UA: '乌克兰',
+    PH: '菲律宾', LK: '斯里兰卡', PE: '秘鲁', DE: '德国', FR: '法国',
+    JP: '日本', IT: '意大利', GB: '英国', TR: '土耳其', AU: '澳大利亚',
+    CA: '加拿大', EC: '厄瓜多尔', ES: '西班牙', HU: '匈牙利', NL: '荷兰',
+    TH: '泰国', ZW: '津巴布韦', AT: '奥地利', BD: '孟加拉', BG: '保加利亚',
+    CH: '瑞士', DO: '多米尼加', EG: '埃及', LS: '莱索托', MA: '摩洛哥',
+    NG: '尼日利亚', TW: '台湾'
+};
+
+let LB_CACHE = null; // 标签缓存 [[id,title]]
+let CT_CACHE = null; // 国家缓存 [[code,label]]
 
 function stripTags(s) { return String(s || '').replace(/<[^>]+>/g, '').replace(/^\s+|\s+$/g, ''); }
 
@@ -209,8 +241,22 @@ function mapLive(it) {
     };
 }
 
-function videoList(query, page) {
-    const d = api('GET', '/api/v2/home/public/video/list?channel=' + CHANNEL + '&' + query + '&page=' + page + '&limit=' + LIMIT, null, false);
+// 视频列表公共查询串拼装（只拼实测生效的参数）
+function videoQuery(tid, ext) {
+    let type = 'cate';
+    let typeId = tid;
+    if (tid === 'all') { type = 'last'; typeId = ''; }
+    else if (tid === 'tag') { type = 'label'; typeId = (ext && ext.label) ? ext.label : ''; }
+    let q = 'channel=' + CHANNEL + '&type=' + type;
+    if (typeId) q += '&typeId=' + encodeURIComponent(String(typeId));
+    if (ext && ext.videoType === 'short') q += '&videoType=short';
+    if (ext && ext.videoType === 'long') q += '&videoType=long';
+    if (ext && ext.order === 'point') q += '&order=point';
+    return q;
+}
+
+function videoList(tid, ext, page) {
+    const d = api('GET', '/api/v2/home/public/video/list?' + videoQuery(tid, ext) + '&page=' + page + '&limit=' + LIMIT, null, false);
     if (!d || !d.list) return { page: page, pagecount: 0, limit: LIMIT, total: 0, list: [] };
     const list = [];
     for (let i = 0; i < d.list.length; i++) { const v = mapItem(d.list[i]); if (v) list.push(v); }
@@ -220,8 +266,10 @@ function videoList(query, page) {
     return { page: page, pagecount: pc, limit: LIMIT, total: total, list: list };
 }
 
-function liveList(page) {
-    const d = api('POST', '/api/live/index', { page: page, limit: LIMIT }, true);
+function liveList(page, country) {
+    const body = { page: page, limit: LIMIT };
+    if (country) body.country = String(country);
+    const d = api('POST', '/api/live/index', body, true);
     const list = [];
     const lives = d && (d.lives || d.list);
     if (lives) for (let i = 0; i < lives.length; i++) { const v = mapLive(lives[i]); if (v) list.push(v); }
@@ -245,14 +293,61 @@ function getLabels() {
     return TAG_FALLBACK;
 }
 
+// 国家列表：优先从 live/index 的 countries 拿（带数量），失败用内置 41 国
+function getCountries() {
+    if (CT_CACHE) return CT_CACHE;
+    const d = api('POST', '/api/live/index', { page: 1, limit: 1 }, true);
+    const out = [];
+    const cs = d && d.countries;
+    if (cs && cs.length) {
+        for (let i = 0; i < cs.length; i++) {
+            const c = cs[i];
+            const code = String(c.code || c.country || '');
+            if (!code) continue;
+            const n = parseInt(c.count, 10) || 0;
+            out.push([code, (CC[code] || code) + '(' + n + ')']);
+        }
+    }
+    if (!out.length) {
+        for (const k in CC) out.push([k, CC[k]]);
+    }
+    CT_CACHE = out;
+    return out;
+}
+
 // ---------------- 对外方法 ----------------
 function init(ext) { }
 
+// 视频类目共用筛选项：时长 / 排序 / 标签
+function videoFilters() {
+    const labels = getLabels();
+    const lv = [{ n: '全部', v: '' }];
+    for (let i = 0; i < labels.length; i++) lv.push({ n: labels[i][1], v: labels[i][0] });
+    return [
+        { key: 'videoType', name: '时长', value: [{ n: '全部', v: '' }, { n: '短视频', v: 'short' }, { n: '长视频', v: 'long' }] },
+        { key: 'order', name: '排序', value: [{ n: '最新', v: '' }, { n: '高分', v: 'point' }] },
+        { key: 'label', name: '标签', value: lv }
+    ];
+}
+
+function liveFilters() {
+    const cs = getCountries();
+    const cv = [{ n: '全球', v: '' }];
+    for (let i = 0; i < cs.length; i++) cv.push({ n: cs[i][1], v: cs[i][0] });
+    return [{ key: 'country', name: '国家', value: cv }];
+}
+
 function home(filter) {
-    const cls = CATS.map(function (c) { return { type_id: c[0], type_name: c[1] }; });
+    const cls = [{ type_id: 'all', type_name: '最新' }];
+    for (let i = 0; i < CATS.length; i++) cls.push({ type_id: CATS[i][0], type_name: CATS[i][1] });
     cls.push({ type_id: 'live', type_name: '美女直播' });
     cls.push({ type_id: 'tag', type_name: '标签合集' });
-    const filters = { tag: [{ key: 'label', name: '标签', value: getLabels().map(function (t) { return { n: t[1], v: t[0] }; }) }] };
+    const vf = videoFilters();
+    const filters = {};
+    filters['all'] = vf;
+    for (let i = 0; i < CATS.length; i++) filters[CATS[i][0]] = vf;
+    filters['tag'] = [{ key: 'label', name: '标签', value: vf[2].value }];
+    filters['live'] = liveFilters();
     const list = [];
     const d = api('GET', '/api/v2/home/public/video/home/index?channel=' + CHANNEL, null, false);
     const secs = d && d.list;
@@ -260,7 +355,7 @@ function home(filter) {
         for (let i = 0; i < secs[0].list.length; i++) { const v = mapItem(secs[0].list[i]); if (v) list.push(v); }
     }
     if (!list.length) {
-        const h = videoList('type=cate&typeId=268', 1);
+        const h = videoList('all', null, 1);
         return JSON.stringify({ class: cls, filters: filters, list: h.list });
     }
     return JSON.stringify({ class: cls, filters: filters, list: list });
@@ -276,30 +371,26 @@ function homeVod() {
             for (let i = 0; i < blk.length; i++) { const v = mapItem(blk[i]); if (v) list.push(v); }
         }
     }
-    if (!list.length) return JSON.stringify({ list: videoList('type=cate&typeId=268', 1).list });
+    if (!list.length) return JSON.stringify({ list: videoList('all', null, 1).list });
     return JSON.stringify({ list: list });
+}
+
+function parseExt(extend) {
+    if (!extend) return {};
+    if (typeof extend === 'object') return extend;
+    try { return JSON.parse(extend) || {}; } catch (e) { return {}; }
 }
 
 function category(tid, pg, filter, extend) {
     let page = parseInt(pg, 10);
     if (!page || page < 1) page = 1;
     const t = String(tid);
+    const ext = parseExt(extend);
+    // 直播：POST /api/live/index，支持国家筛选
+    if (t === 'live') return JSON.stringify(liveList(page, ext.country || ''));
     // 标签合集：extend.label = 标签 id
-    if (t === 'tag') {
-        let lid = '';
-        if (extend) {
-            try {
-                const e = typeof extend === 'string' ? JSON.parse(extend) : extend;
-                if (e && e.label) lid = String(e.label);
-            } catch (err) { }
-        }
-        if (!lid) lid = getLabels()[0][0];
-        return JSON.stringify(videoList('type=label&typeId=' + encodeURIComponent(lid), page));
-    }
-    // 直播：POST /api/live/index
-    if (t === 'live') return JSON.stringify(liveList(page));
-    // 普通类目
-    return JSON.stringify(videoList('type=cate&typeId=' + encodeURIComponent(t), page));
+    if (t === 'tag' && !ext.label) ext.label = getLabels()[0][0];
+    return JSON.stringify(videoList(t, ext, page));
 }
 
 function detail(id) {
