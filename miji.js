@@ -63,6 +63,38 @@ function abs(u) {
     return HOST + '/' + s;
 }
 
+// ---------- 封面归一化 ----------
+
+// 只取 path 部分（含首个 /），丢掉任何 host 差异
+function picPath(u) {
+    let s = String(u || '').trim();
+    if (!s) return '';
+    if (s.indexOf('//') === 0) s = 'https:' + s;
+    const m = s.match(/^https?:\/\/[^\/]+([\s\S]*)$/i);
+    if (m) s = m[1] || '';
+    if (s.charAt(0) !== '/') s = '/' + s;
+    // 压缩参数全线不可用（?w= / ?t= 返占位或超时），原图才通
+    const q = s.indexOf('?');
+    if (q >= 0) s = s.slice(0, q);
+    // _thumb.jpg 缩略图 404，回退原名
+    s = s.replace(/_(thumb|small|mini)\.(jpg|jpeg|png|webp)$/i, '.$2');
+    return s;
+}
+
+// 站点同域 /upload/vod/... 实测最稳（24/24，平均 235KB）
+// 绝对地址保留原 host，只清无效的压缩参数与缩略后缀
+function fixPic(u) {
+    const p = picPath(u);
+    if (!p) return '';
+    const raw = String(u || '').trim();
+    if (/^https?:\/\//i.test(raw) || raw.indexOf('//') === 0) {
+        const m = raw.replace(/^\/\//, 'https://').match(/^(https?:\/\/[^\/]+)/i);
+        const h = m ? m[1] : '';
+        if (h) return h + p;
+    }
+    return abs(p);
+}
+
 // ---------- 文本工具 ----------
 
 // 解码 HTML 实体 + 去标签
@@ -134,7 +166,7 @@ function parseLi(seg) {
     return {
         vod_id: id,
         vod_name: name || ('影片 ' + id),
-        vod_pic: abs(pic),
+        vod_pic: fixPic(pic),
         vod_remarks: marks
     };
 }
@@ -235,11 +267,13 @@ function parseDetail(html, id) {
 
     // 简介：meta description 实测是全站通用 SEO 文案（不同影片内容完全相同），
     // 冒充简介只会误导。只用标题里的真实信息拼一句诚实的说明。
-    // 年份：本站 detail-info 无数据，改从封面路径 /upload/vod/20261021-1/ 里取
+    // 年份：本站 detail-info 无数据；封面路径带上传日期 /20261021/xxx/1.jpg，
+    // 取其中的年份（同为 4 位年，至少是真实存在的元数据，不是编的）
     let year = '';
     const yFromPic = firstMatch(pic, /\/vod\/((?:19|20)\d{2})\d{4}/);
     if (yFromPic) year = yFromPic;
-    if (!year) year = firstMatch(txt + (name || ''), /(19|20)\d{2}/);
+    if (!year) year = firstMatch(pic, /((?:19|20)\d{2})\d{4}\//);
+    if (!year) year = firstMatch(txt + (name || ''), /((?:19|20)\d{2})/);
 
     let content = txt;
     if (txt.replace(/[<>\/\s]/g, '').length < 2) content = '';
@@ -262,7 +296,7 @@ function parseDetail(html, id) {
     const out = {
         vod_id: String(id || ''),
         vod_name: name || ('影片 ' + id),
-        vod_pic: abs(pic),
+        vod_pic: fixPic(pic),
         vod_remarks: '',
         vod_year: year || '',
         vod_area: area || '',
@@ -390,21 +424,39 @@ function category(tid, pg, filter, extend) {
     let list = [];
     try { list = parseList(html); } catch (e) { list = []; }
 
-    // 真实总页数从分页条读：/vodtype/52-363/ 里的最大页码
-    let totalPage = 0;
+    // 分页条里的最大页码只当参考上限：本站末页常常直接返回空壳，
+    // 死信分页条会把用户带进空白页，所以以「本页 0 条」为准即停
+    let barPage = 0;
     if (html) {
         const re = new RegExp('/vodtype/' + t + '-(\\d+)/', 'g');
         let m;
         while ((m = re.exec(html)) !== null) {
             const n = Number(m[1]);
-            if (n > totalPage) totalPage = n;
+            if (n > barPage) barPage = n;
         }
     }
+
+    // 空页即停：page>1 且 0 条 → 把 pagecount 收敛到 page-1
+    if (!list.length) {
+        const last = page > 1 ? page - 1 : 1;
+        return JSON.stringify({
+            page: page,
+            pagecount: last,
+            limit: 24,
+            total: last * 24,
+            list: []
+        });
+    }
+
+    // 有数据：pagecount 取分页条上限与 page+1 的较大者可继续翻，
+    // 但绝不返回小于当前页的值，否则影视仓会截断
+    let pagecount = barPage > page ? barPage : page;
+    if (pagecount < page) pagecount = page;
     return JSON.stringify({
         page: page,
-        pagecount: totalPage || page,
+        pagecount: pagecount,
         limit: list.length || 24,
-        total: totalPage ? totalPage * 24 : 0,
+        total: pagecount * 24,
         list: list
     });
 }
@@ -460,6 +512,41 @@ function search(wd, quick, pg) {
     });
 }
 
+// 主播放列表 → 媒体列表。vostrely 返回的 index.m3u8 只是单变体跳板
+// （119B，含 EXT-X-STREAM-INF 无分片），个别壳子不会自动下钻，
+// 这里主动跟一层，拿不到就原样交回去，绝不伪造 EXT-X-ENDLIST
+function followMaster(url, hd) {
+    let txt = '';
+    try {
+        const res = request(url, { headers: hd });
+        if (res && res.ok !== false) txt = String(res.content || '');
+    } catch (e) { txt = ''; }
+    if (!txt || txt.indexOf('#EXT-X-STREAM-INF') < 0) return '';
+    if (txt.indexOf('#EXT-X-ENDLIST') >= 0) return '';
+    const lines = txt.split('\n');
+    let best = '';
+    let bestBw = -1;
+    for (let i = 0; i < lines.length; i++) {
+        const ln = String(lines[i] || '').trim();
+        if (!ln || ln.charAt(0) === '#') continue;
+        // 上一行的 BANDWIDTH 用于选最高码率
+        let bw = 0;
+        for (let j = i - 1; j >= 0 && j >= i - 3; j--) {
+            const mm = String(lines[j] || '').match(/BANDWIDTH=(\d+)/);
+            if (mm) { bw = Number(mm[1]) || 0; break; }
+        }
+        if (bw > bestBw) { bestBw = bw; best = ln; }
+    }
+    if (!best) return '';
+    if (/^https?:\/\//i.test(best)) return best;
+    const o = url.match(/^(https?:\/\/[^\/]+)/);
+    const root = o ? o[1] : '';
+    if (best.charAt(0) === '/') return root + best;
+    // 相对路径按父目录拼接
+    const cut = url.lastIndexOf('/');
+    return url.slice(0, cut + 1) + best;
+}
+
 function play(flag, id, vipFlags) {
     let s = String(id === undefined || id === null ? '' : id);
     const cut = s.indexOf('$');
@@ -469,7 +556,15 @@ function play(flag, id, vipFlags) {
 
     // 已经是 m3u8 直链
     if (/\.(m3u8|mp4|flv|mkv|ts)(\?|$)/i.test(s)) {
-        return JSON.stringify({ parse: 0, jx: 0, url: s, header: HEADERS });
+        const hd0 = { 'User-Agent': UA };
+        let u0 = s;
+        if (/\.m3u8(\?|$)/i.test(s)) {
+            const o0 = s.match(/^(https?:\/\/[^\/]+)/);
+            if (o0) hd0['Referer'] = o0[1] + '/';
+            const v = followMaster(s, hd0);
+            if (v) u0 = v;
+        }
+        return JSON.stringify({ parse: 0, jx: 0, url: u0, header: hd0 });
     }
 
     // 播放页：抓一次抠真链
@@ -481,7 +576,12 @@ function play(flag, id, vipFlags) {
         const o = real.match(/^(https?:\/\/[^\/]+)/);
         const hd = { 'User-Agent': UA };
         if (o) hd['Referer'] = o[1] + '/';
-        return JSON.stringify({ parse: 0, jx: 0, url: real, header: hd });
+        let url = real;
+        if (/\.m3u8(\?|$)/i.test(real)) {
+            const v = followMaster(real, hd);
+            if (v) url = v;
+        }
+        return JSON.stringify({ parse: 0, jx: 0, url: url, header: hd });
     }
 
     // 抠不到就交嗅探器
