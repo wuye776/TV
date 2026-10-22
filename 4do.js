@@ -28,7 +28,9 @@ const API2 = 'https://apissss.xn--d9u11dw2l41at78afwi.xn--fiqs8s';
 const WEB = 'https://4do.4do9dm.com:51888';
 const CHANNEL = 'vvmmyjs';
 const LIMIT = 24;
-const LIVE_M3U8 = 'https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8';
+// .live 域名的 variant 会被网关 302 到 /hls/cpa/v2/stream.m3u8（CPA 广告垫片）；
+// .com 域名的 master 指向 media-hls 真流路径，且 BANDWIDTH 逐秒变化（真直播）
+const LIVE_M3U8 = 'https://edge-hls.doppiocdn.com/hls/{id}/master/{id}_auto.m3u8?playlistType=lowLatency';
 
 // ---------------- token（指纹匿名登录，TTL≈1860s，内存缓存自续） ----------------
 let TK = '';
