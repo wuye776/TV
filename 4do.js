@@ -1,22 +1,22 @@
 // ============================================================
-// 影视仓 / TVBox · QuickJS spider —— 4do（vvmmyjs 通道）v3
+// 影视仓 / TVBox · QuickJS spider —— 4do（vvmmyjs 通道）v6
 // API：xn6.xn6oce.com:25118 · Web：4do.4do9dm.com:51888
 //
 // 形态：type:3，api 填本文件 URL，零服务器
 //   { "key":"4do","name":"4do","type":3,"api":".../4do.js" }
 //
-// v3 增强（2026-10-22 实测取证后落地）：
-//   1. 视频线筛选：时长（videoType=short|long）+ 排序（order=point）
-//      —— 服务端白名单很窄：order 仅 point 生效，其余值一律返空；
-//         year / area 实测被忽略（total 恒定 22216），故不下发，避免空页。
-//   2. 直播线国家筛选：POST /api/live/index body {page,limit,country}
-//      —— countries 列表接口自带 41 国 + 数量，直接作为筛选项源。
-//   3. 分类 18 个 + 标签 496 个（label/list）+ 直播 1 个
+// v6（2026-10-22 性能修复）：
+//   1. 直播模块整体下线 —— 上游 PSCH 保护，master 每个 variant 都 302 到
+//      /hls/cpa/v2/stream.m3u8 的 CPA 广告垫片，取不到真流，留着只是白等。
+//   2. 删「探花」分类（360）—— 上游 total=0，永远空列表。
+//   3. 筛选项懒加载 —— home() 不再拉 496 个标签（label/list 31KB）和
+//      41 国直播列表（要先登录），首屏请求从 4 个砍到 1 个。
+//   4. 全量标签只在真进「标签合集」时才拉。
 //
-// v2 已有能力保留：
-//   · 标签线 type=label&typeId=<labelId>
-//   · 直播 HLS：https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8（免 token）
-//   · homeVod 走 /home/index 板块
+// v3 能力保留：
+//   视频线筛选：时长（videoType=short|long）+ 排序（order=point）
+//   —— 服务端白名单很窄：order 仅 point 生效；year / area 实测被忽略。
+//   分类 17 个 + 标签 496 个（懒加载）+ 标签合集 1 个
 //
 // 加密壳：{code,data(b64url),key} = b64url + key 循环 XOR → UTF-8 → JSON
 // 封面：视频 thumb 是 .jpg.enc（AES-256-CBC 密文），QuickJS 无 AES，故留空
@@ -28,20 +28,6 @@ const API2 = 'https://apissss.xn--d9u11dw2l41at78afwi.xn--fiqs8s';
 const WEB = 'https://4do.4do9dm.com:51888';
 const CHANNEL = 'vvmmyjs';
 const LIMIT = 24;
-// 直播多线路：同一个 id，三条 CDN 家族轮着取 master。
-//   .live → cdn77.org（156.146.x），国内可达，实测 200
-//   .org  → 同样指向 media-hls.doppiocdn.org，国内可达，实测 200
-//   .com  → Cloudflare（104.17.x），国内 SNI 常被 reset，放最后当备胎
-// 上游对匿名/机房 IP 会把 variant 302 到 /hls/cpa/v2/stream.m3u8（CPA 垫片），
-// 真流带 #EXT-X-MOUFLON:PSCH 保护令牌，客户端拿不到 ps=true 配置就只能是垫片。
-// 所以这里不赌单条，给三条线 + 一条网页兜底，哪个通点哪个。
-const LIVE_LINES = [
-    'https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8',
-    'https://edge-hls.doppiocdn.org/hls/{id}/master/{id}_auto.m3u8',
-    'https://edge-hls.doppiocdn.com/hls/{id}/master/{id}_auto.m3u8',
-    'https://edge-hls.doppiocdn.live/hls/{id}/master/{id}_auto.m3u8?playlistType=lowLatency'
-];
-const LIVE_WEB = 'https://4do.4do9dm.com:51888';
 
 // ---------------- token（指纹匿名登录，TTL≈1860s，内存缓存自续） ----------------
 let TK = '';
@@ -120,12 +106,14 @@ function bodyOf(r) {
 }
 
 // api(method, path, bodyObj, needAuth) → 解密后的业务对象；失败返回 null
-// 主 API 挂了自动切备用域名再试一次
+// 主 API 挂了才切备用域名。备用域只扛「不带鉴权」的请求，
+// 带鉴权的请求不重放——重放会再触发一次 fingerprint 登录，
+// 首屏就会打出 6 个请求（实测 23.7s），这是旧版最大性能坑。
 function api(method, path, bodyObj, needAuth) {
-    let out = api1(API, method, path, bodyObj, needAuth);
+    const out = api1(API, method, path, bodyObj, needAuth);
     if (out) return out;
-    out = api1(API2, method, path, bodyObj, needAuth);
-    return out;
+    if (needAuth) return null;
+    return api1(API2, method, path, bodyObj, needAuth);
 }
 
 function api1(host, method, path, bodyObj, needAuth) {
@@ -195,7 +183,7 @@ function getTok() {
 
 // ---------------- 分类：cate/list 18 个全量（含 新闻/其他） ----------------
 const CATS = [
-    ["360", "探花"], ["358", "麻豆"], ["357", "新闻"], ["356", "擦边短剧"],
+    ["358", "麻豆"], ["357", "新闻"], ["356", "擦边短剧"],
     ["269", "其他"], ["346", "VR"], ["345", "女主播"], ["344", "AV中字"],
     ["343", "AV无码"], ["342", "AI换脸"], ["341", "三级"], ["267", "动漫"],
     ["264", "欧美"], ["266", "传媒"], ["263", "日本AV"], ["347", "黑料"],
@@ -211,21 +199,9 @@ const TAG_FALLBACK = [
     ["313", "温泉"], ["318", "家教"], ["319", "母亲"], ["321", "赛车女郎"]
 ];
 
-// 国家码 → 中文（直播 countries 41 国）
-const CC = {
-    CO: '哥伦比亚', US: '美国', IN: '印度', CN: '中国', RO: '罗马尼亚',
-    VN: '越南', BR: '巴西', AR: '阿根廷', RU: '俄罗斯', ZA: '南非',
-    MX: '墨西哥', VE: '委内瑞拉', CL: '智利', KE: '肯尼亚', UA: '乌克兰',
-    PH: '菲律宾', LK: '斯里兰卡', PE: '秘鲁', DE: '德国', FR: '法国',
-    JP: '日本', IT: '意大利', GB: '英国', TR: '土耳其', AU: '澳大利亚',
-    CA: '加拿大', EC: '厄瓜多尔', ES: '西班牙', HU: '匈牙利', NL: '荷兰',
-    TH: '泰国', ZW: '津巴布韦', AT: '奥地利', BD: '孟加拉', BG: '保加利亚',
-    CH: '瑞士', DO: '多米尼加', EG: '埃及', LS: '莱索托', MA: '摩洛哥',
-    NG: '尼日利亚', TW: '台湾'
-};
-
 let LB_CACHE = null; // 标签缓存 [[id,title]]
-let CT_CACHE = null; // 国家缓存 [[code,label]]
+let HOME_CACHE = null; // home/index 缓存（home 与 homeVod 共用，省一次 5s 请求）
+let HOME_EXP = 0;
 
 function stripTags(s) { return String(s || '').replace(/<[^>]+>/g, '').replace(/^\s+|\s+$/g, ''); }
 
@@ -241,16 +217,6 @@ function mapItem(it) {
         vod_name: String(it.title || '').replace(/^\s+|\s+$/g, ''),
         vod_pic: '',
         vod_remarks: firstTitle(it.labelTitles) || firstTitle(it.classifyTitles) || String(it.point || '')
-    };
-}
-
-function mapLive(it) {
-    if (!it || !it.id) return null;
-    return {
-        vod_id: 'L' + String(it.id),
-        vod_name: (String(it.title || '').replace(/^\s+|\s+$/g, '') || ('@' + String(it.username || ''))),
-        vod_pic: String(it.cover || ''),
-        vod_remarks: String(it.viewerCount || 0) + '人观看' + (it.isPaid ? ' · 门票' : '')
     };
 }
 
@@ -279,19 +245,7 @@ function videoList(tid, ext, page) {
     return { page: page, pagecount: pc, limit: LIMIT, total: total, list: list };
 }
 
-function liveList(page, country) {
-    const body = { page: page, limit: LIMIT };
-    if (country) body.country = String(country);
-    const d = api('POST', '/api/live/index', body, true);
-    const list = [];
-    const lives = d && (d.lives || d.list);
-    if (lives) for (let i = 0; i < lives.length; i++) { const v = mapLive(lives[i]); if (v) list.push(v); }
-    const total = (d && parseInt(d.total, 10)) || list.length;
-    let pc = Math.ceil(total / LIMIT);
-    if (pc < 1) pc = list.length ? page : 1;
-    return { page: page, pagecount: pc, limit: LIMIT, total: total, list: list };
-}
-
+// 标签全量：只在真进「标签合集」且需要更多标签时才拉，首屏不碰。
 function getLabels() {
     if (LB_CACHE) return LB_CACHE;
     const d = api('GET', '/api/v2/home/public/video/label/list?channel=' + CHANNEL, null, false);
@@ -306,34 +260,14 @@ function getLabels() {
     return TAG_FALLBACK;
 }
 
-// 国家列表：优先从 live/index 的 countries 拿（带数量），失败用内置 41 国
-function getCountries() {
-    if (CT_CACHE) return CT_CACHE;
-    const d = api('POST', '/api/live/index', { page: 1, limit: 1 }, true);
-    const out = [];
-    const cs = d && d.countries;
-    if (cs && cs.length) {
-        for (let i = 0; i < cs.length; i++) {
-            const c = cs[i];
-            const code = String(c.code || c.country || '');
-            if (!code) continue;
-            const n = parseInt(c.count, 10) || 0;
-            out.push([code, (CC[code] || code) + '(' + n + ')']);
-        }
-    }
-    if (!out.length) {
-        for (const k in CC) out.push([k, CC[k]]);
-    }
-    CT_CACHE = out;
-    return out;
-}
-
 // ---------------- 对外方法 ----------------
 function init(ext) { }
 
 // 视频类目共用筛选项：时长 / 排序 / 标签
+// 标签走懒加载策略：首屏只给内置 20 个，真进「标签合集」才去拉全量 496 个。
+// 这样 home() 少打一次 31KB 的 label/list（实测 0.4~5.8s 波动），首屏快 5 秒以上。
 function videoFilters() {
-    const labels = getLabels();
+    const labels = TAG_FALLBACK;
     const lv = [{ n: '全部', v: '' }];
     for (let i = 0; i < labels.length; i++) lv.push({ n: labels[i][1], v: labels[i][0] });
     return [
@@ -343,26 +277,17 @@ function videoFilters() {
     ];
 }
 
-function liveFilters() {
-    const cs = getCountries();
-    const cv = [{ n: '全球', v: '' }];
-    for (let i = 0; i < cs.length; i++) cv.push({ n: cs[i][1], v: cs[i][0] });
-    return [{ key: 'country', name: '国家', value: cv }];
-}
-
 function home(filter) {
     const cls = [{ type_id: 'all', type_name: '最新' }];
     for (let i = 0; i < CATS.length; i++) cls.push({ type_id: CATS[i][0], type_name: CATS[i][1] });
-    cls.push({ type_id: 'live', type_name: '美女直播' });
     cls.push({ type_id: 'tag', type_name: '标签合集' });
     const vf = videoFilters();
     const filters = {};
     filters['all'] = vf;
     for (let i = 0; i < CATS.length; i++) filters[CATS[i][0]] = vf;
     filters['tag'] = [{ key: 'label', name: '标签', value: vf[2].value }];
-    filters['live'] = liveFilters();
     const list = [];
-    const d = api('GET', '/api/v2/home/public/video/home/index?channel=' + CHANNEL, null, false);
+    const d = homeIndex();
     const secs = d && d.list;
     if (secs && secs.length && secs[0].list) {
         for (let i = 0; i < secs[0].list.length; i++) { const v = mapItem(secs[0].list[i]); if (v) list.push(v); }
@@ -374,9 +299,22 @@ function home(filter) {
     return JSON.stringify({ class: cls, filters: filters, list: list });
 }
 
+// home/index 板块数据：home 与 homeVod 共用同一份，缓存 5 分钟。
+// 这个接口实测 0.6~10.6s 波动，是首屏最大不确定源，绝不打第二次。
+function homeIndex() {
+    if (HOME_CACHE && Date.now() < HOME_EXP) return HOME_CACHE;
+    const d = api('GET', '/api/v2/home/public/video/home/index?channel=' + CHANNEL, null, false);
+    if (d && d.list) {
+        HOME_CACHE = d;
+        HOME_EXP = Date.now() + 300000;
+        return d;
+    }
+    return HOME_CACHE || null;
+}
+
 function homeVod() {
     const list = [];
-    const d = api('GET', '/api/v2/home/public/video/home/index?channel=' + CHANNEL, null, false);
+    const d = homeIndex();
     const secs = d && d.list;
     if (secs) {
         for (let s = 0; s < secs.length; s++) {
@@ -399,39 +337,13 @@ function category(tid, pg, filter, extend) {
     if (!page || page < 1) page = 1;
     const t = String(tid);
     const ext = parseExt(extend);
-    // 直播：POST /api/live/index，支持国家筛选
-    if (t === 'live') return JSON.stringify(liveList(page, ext.country || ''));
-    // 标签合集：extend.label = 标签 id
+    // 标签合集：extend.label = 标签 id；未选时拉全量标签表取第一个
     if (t === 'tag' && !ext.label) ext.label = getLabels()[0][0];
     return JSON.stringify(videoList(t, ext, page));
 }
 
 function detail(id) {
     const vid = String(id || '');
-    // 直播条目：id = L<liveId>
-    if (vid.charAt(0) === 'L' && /^\d+$/.test(vid.substring(1))) {
-        const lid = vid.substring(1);
-        const v = {
-            vod_id: vid,
-            vod_name: '直播 ' + lid,
-            vod_pic: '',
-            vod_content: '4do 美女直播（stripchat 源，边玩边聊实时流）\n直播间：' + lid,
-            vod_play_from: '4do直播',
-            vod_play_url: '线路①·live$' + vid + '@0'
-                + '#线路②·org$' + vid + '@1'
-                + '#线路③·com$' + vid + '@2'
-                + '#线路④·低延迟$' + vid + '@3'
-                + '#备用·网页$' + vid + '@9'
-        };
-        // 拉一次详情补标题/封面，失败不阻塞
-        const d = api('POST', '/api/live/detail', { id: parseInt(lid, 10) }, true);
-        if (d && d.id) {
-            v.vod_name = String(d.title || '').replace(/^\s+|\s+$/g, '') || ('@' + String(d.username || '直播 ' + lid));
-            v.vod_pic = String(d.cover || '');
-            v.vod_content = '主播：@' + String(d.username || '') + '\n人气：' + String(d.popularity || 0) + ' · 观看：' + String(d.viewerCount || 0) + '\n' + v.vod_content;
-        }
-        return JSON.stringify({ list: [v] });
-    }
     const d = api('GET', '/api/v2/home/public/video/long/detail?id=' + encodeURIComponent(vid) + '&channel=' + CHANNEL, null, false);
     if (!d || !d.id) return JSON.stringify({ list: [] });
     const tags = String(d.classifyTitles || '').split(',').filter(function (x) { return x; });
@@ -473,27 +385,6 @@ function search(key, quick, pg) {
 
 function play(flag, id, vipFlags) {
     const vid = String(id || '');
-    const hdr = JSON.stringify({ 'User-Agent': UA });
-    // 直播：id 形如 L<liveId> 或 L<liveId>@<线路号>
-    if (vid.charAt(0) === 'L') {
-        let raw = vid.substring(1), ln = 0;
-        const at = raw.indexOf('@');
-        if (at > 0) { ln = parseInt(raw.substring(at + 1), 10) || 0; raw = raw.substring(0, at); }
-        if (/^\d+$/.test(raw)) {
-            if (ln === 9) {
-                // 网页兜底：优先拿官方 detail 里的 player.url（真播放器 iframe），
-                // 拿不到就退到 4do 网页直播页。parse:1 交给客户端 webview。
-                let w = '';
-                const d = api('POST', '/api/live/detail', { id: parseInt(raw, 10) }, true);
-                if (d && d.player && d.player.url) w = String(d.player.url);
-                if (!w) { w = LIVE_WEB + '/live/' + raw; }
-                return JSON.stringify({ parse: 1, playUrl: w, url: w, header: hdr });
-            }
-            const idx = (ln >= 0 && ln < LIVE_LINES.length) ? ln : 0;
-            const u = LIVE_LINES[idx].replace(/\{id\}/g, raw);
-            return JSON.stringify({ parse: 0, playUrl: '', url: u, header: hdr });
-        }
-    }
     const d = api('GET', '/api/v2/home/user/video/play/url?id=' + encodeURIComponent(vid) + '&channel=' + CHANNEL, null, true);
     const hdr2 = JSON.stringify({ 'User-Agent': UA, 'Referer': WEB + '/', 'Origin': WEB });
     if (!d || !d.masterUrl) return JSON.stringify({ parse: 0, playUrl: '', url: '', header: hdr2 });
