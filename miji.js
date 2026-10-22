@@ -42,13 +42,28 @@ function getText(url) {
     return String(c || '');
 }
 
+// 带状态码的抓取：上游会限流（实测连打三次有两次 403），
+// 403 时重试一次（换连接换时间片），别当失败直接抛。
+function getTextSt(url) {
+    let res = null;
+    for (let i = 0; i < 2; i++) {
+        try { res = request(url, { headers: HEADERS }); } catch (e) { res = null; }
+        const st = res && (res.status || res.code);
+        if (res && res.ok !== false && st !== 403) break;
+        // 403 就再来一次，不做 busy-wait（QuickJS 无 sleep，空转会卡死电视）
+    }
+    if (!res || res.ok === false) return '';
+    const c = res.content;
+    return typeof c === 'string' ? c : String(c || '');
+}
+
 // 首页/列表页抓取：站点 DNS 有多个 A 记录且混有病节点，
 // 单次请求可能落进 615 字节的空壳页，多次重试即可绕开
 function getPage(path) {
     let best = '';
     for (let i = 0; i < 3; i++) {
         let h = '';
-        try { h = getText(HOST + path); } catch (e) { h = ''; }
+        try { h = getTextSt(HOST + path); } catch (e) { h = ''; }
         if (h && h.length > best.length) best = h;
         if (best.length > 5000) return best;
     }
@@ -474,7 +489,7 @@ function detail(id) {
         const one = String(arr[i]).trim();
         if (!one) continue;
         let html = '';
-        try { html = getText(HOST + '/voddetail/' + one + '/'); } catch (e) { html = ''; }
+        try { html = getTextSt(HOST + '/voddetail/' + one + '/'); } catch (e) { html = ''; }
         if (!html) continue;
         out.push(parseDetail(html, one));
     }
@@ -572,7 +587,7 @@ function play(flag, id, vipFlags) {
     // 播放页：抓一次抠真链
     const pageUrl = abs(s);
     let real = '';
-    try { real = extractPlay(getText(pageUrl)); } catch (e) { real = ''; }
+    try { real = extractPlay(getTextSt(pageUrl)); } catch (e) { real = ''; }
 
     if (real && /^https?:\/\//i.test(real)) {
         const o = real.match(/^(https?:\/\/[^\/]+)/);
