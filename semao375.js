@@ -14,7 +14,7 @@
 
 const UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 
-let BASE = 'https://www.semao376.xyz';
+let BASE = 'https://www.semao378.xyz';
 let HEADERS = { 'User-Agent': UA };
 
 // 站点分类（首页固定 22 项，写死不额外请求，冷启动 0 延迟）
@@ -71,8 +71,10 @@ function hostList() {
     const list = [BASE];
     if (m) {
         const n = parseInt(m[1], 10);
-        // 近邻优先：先 ±1，再 ±2，再外围。实测同日 374/376/377 同时活、375 已死。
-        const nums = [n + 1, n - 1, n + 2, n - 2, n + 3, n + 4];
+        // 近邻优先：先 ±1，再 ±2，再外围。
+        // 实测 2026-10-22：374 活、375/376/377 全死、378 活。
+        // 日抛域名常常连号死一片，所以步长给到 6，别只探紧邻。
+        const nums = [n + 1, n - 1, n + 2, n + 3, n + 4, n + 5, n + 6, n - 2];
         const seen = { };
         seen[n] = 1;
         for (let i = 0; i < nums.length; i++) {
@@ -99,8 +101,9 @@ function probe(host) {
 function fetchOnce(path, host) {
     const url = /^https?:\/\//.test(path) ? path : host + path;
     let lastErr = null;
-    // 同域名只重试 1 次：A 记录同域名轮询同一批 IP，重试收益低
-    for (let i = 0; i < 2; i++) {
+    // 单次，不重试：A 记录同域名轮询同一批 IP，重试收益低；
+    // 而死域名重试 2 次会让首屏从 14 次连接涨到 28 次，电视端必超时。
+    for (let i = 0; i < 1; i++) {
         try {
             const res = request(url, { headers: HEADERS });
             if (!res || res.ok === false) throw new Error('http ' + (res && res.status));
