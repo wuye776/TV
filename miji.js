@@ -436,14 +436,16 @@ function category(tid, pg, filter, extend) {
         }
     }
 
-    // 空页即停：page>1 且 0 条 → 把 pagecount 收敛到 page-1
+    // 空页即停：抓到了页面但 0 条 = 真到底，收敛到 page-1；
+    // 页面都没抓回来 = 网络抖动，别谎报到底，pagecount 保持 page 让用户重试
     if (!list.length) {
-        const last = page > 1 ? page - 1 : 1;
+        const realEmpty = html && html.length > 500;
+        const last = realEmpty ? (page > 1 ? page - 1 : 1) : page;
         return JSON.stringify({
             page: page,
             pagecount: last,
             limit: 24,
-            total: last * 24,
+            total: realEmpty && page > 1 ? last * 24 : 0,
             list: []
         });
     }
