@@ -1,0 +1,514 @@
+// ============================================================
+// 影视仓 / TVBox 本地包 · QuickJS spider（全同步版）
+// 站：秘密研究所（XBPQ 规则站，CMS 接口 closed，纯 HTML 爬虫）
+//
+// api.json:
+//   { "key":"miji", "name":"秘密研究所", "type":3,
+//     "api":"./miji.js",
+//     "ext": { "host":"https://vke-urwg-3wa.xfleet-jul03.cc" } }
+//
+// 硬规范：
+//   1) 全同步，禁止 async / await（QuickJS 宿主不 pump 微任务）
+//   2) export default 对象
+//   3) 每个方法 return JSON 字符串
+//   4) http() 传 async:false，写两遍
+// ============================================================
+
+const UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+
+let HOST = 'https://vke-urwg-3wa.xfleet-jul03.cc';
+let HEADERS = { 'User-Agent': UA };
+
+// 分类表：name$id，用 # 分隔
+const CATS_RAW = '成人短剧$49#更多$200#综合传媒$201#麻豆传媒$202#葫芦影业$203#猫爪影像$204#天美传媒$205#果冻传媒$206#91制片厂$207#蜜桃传媒$208#更多番号$300#200GANA$301#300MIUM$302#259LUXU$305#261ARA$306#277DCV$307#300MAAN$308#300NTK$309#综合番号$350';
+
+// ---------- 网络（全同步） ----------
+
+function request(url, options) {
+    const o = Object.assign({ async: false }, options || {});
+    o.async = false;
+    if (typeof http === 'function') return http(url, o);
+    if (typeof req === 'function') return req(url, o);
+    if (typeof net !== 'undefined' && net && typeof net.http === 'function') return net.http(url, o);
+    throw new Error('no http binding');
+}
+
+function getText(url) {
+    const res = request(url, { headers: HEADERS });
+    if (!res) return '';
+    if (res.ok === false) return '';
+    const c = res.content;
+    if (typeof c === 'string') return c;
+    return String(c || '');
+}
+
+// 首页/列表页抓取：站点 DNS 有多个 A 记录且混有病节点，
+// 单次请求可能落进 615 字节的空壳页，多次重试即可绕开
+function getPage(path) {
+    let best = '';
+    for (let i = 0; i < 3; i++) {
+        let h = '';
+        try { h = getText(HOST + path); } catch (e) { h = ''; }
+        if (h && h.length > best.length) best = h;
+        if (best.length > 5000) return best;
+    }
+    return best;
+}
+
+function abs(u) {
+    const s = String(u || '').trim();
+    if (!s) return '';
+    if (/^https?:\/\//i.test(s)) return s;
+    if (s.charAt(0) === '/') return HOST + s;
+    return HOST + '/' + s;
+}
+
+// ---------- 文本工具 ----------
+
+// 解码 HTML 实体 + 去标签
+function decode(s) {
+    if (s === undefined || s === null) return '';
+    let t = String(s);
+    t = t.replace(/&#(\d+);/g, function (m, d) {
+        const n = parseInt(d, 10);
+        if (!isFinite(n) || n < 1 || n > 65535) return '';
+        return String.fromCharCode(n);
+    });
+    t = t.replace(/&#x([0-9a-fA-F]+);/g, function (m, h) {
+        const n = parseInt(h, 16);
+        if (!isFinite(n) || n < 1 || n > 65535) return '';
+        return String.fromCharCode(n);
+    });
+    t = t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+         .replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+    return t.replace(/<[^>]*>/g, '').trim();
+}
+
+// 清掉会破坏分隔符的字符
+function safe(s) {
+    return decode(s).replace(/\$/g, '＄').replace(/#/g, '＃').replace(/\|\|\|/g, '｜｜｜').trim();
+}
+
+// 按 前缀..后缀 切块（XBPQ 的 && 语义）
+function cutAll(html, pre, post, limit) {
+    const out = [];
+    if (!html) return out;
+    let i = 0;
+    const cap = limit || 500;
+    while (out.length < cap) {
+        const a = html.indexOf(pre, i);
+        if (a < 0) break;
+        const b = html.indexOf(post, a + pre.length);
+        if (b < 0) break;
+        out.push(html.slice(a + pre.length, b));
+        i = b + post.length;
+    }
+    return out;
+}
+
+function cutOne(html, pre, post) {
+    if (!html) return '';
+    const a = html.indexOf(pre);
+    if (a < 0) return '';
+    const b = html.indexOf(post, a + pre.length);
+    if (b < 0) return '';
+    return html.slice(a + pre.length, b);
+}
+
+function firstMatch(s, re) {
+    const m = String(s || '').match(re);
+    return m ? m[1] : '';
+}
+
+// ---------- 列表解析 ----------
+
+// 从 <li> 块里取 href / alt / src，只认 /voddetail/数字/
+function parseLi(seg) {
+    const href = firstMatch(seg, /href="([^"]*)"/);
+    if (!/^\/voddetail\/\d+\/?$/.test(href)) return null;
+    const id = firstMatch(href, /\/voddetail\/(\d+)/);
+    if (!id) return null;
+    const name = decode(firstMatch(seg, /alt="([^"]*)"/));
+    const pic = firstMatch(seg, /src="([^"]*)"/);
+    const marks = decode(firstMatch(seg, /<p>([\s\S]*?)<\/p>/));
+    return {
+        vod_id: id,
+        vod_name: name || ('影片 ' + id),
+        vod_pic: abs(pic),
+        vod_remarks: marks
+    };
+}
+
+// 扫全部 <li>，保留含 class="thumbnail" 且 href 合法的
+function parseList(html) {
+    const out = [];
+    if (!html) return out;
+    let i = 0;
+    while (out.length < 200) {
+        const a = html.indexOf('<li', i);
+        if (a < 0) break;
+        const b = html.indexOf('</li>', a);
+        if (b < 0) break;
+        const seg = html.slice(a, b);
+        i = b + 5;
+        if (seg.indexOf('class="thumbnail"') < 0) continue;
+        const it = parseLi(seg);
+        if (it) out.push(it);
+    }
+    return out;
+}
+
+// ---------- 详情解析 ----------
+
+function parseDetail(html, id) {
+    let name = decode(cutOne(html, '<title>', '</title>'));
+    // 标题常带 "_副标题" 后缀，取最后一个 _ 之前
+    const u = name.lastIndexOf('_');
+    if (u > 0) name = name.slice(0, u).trim();
+
+    // 封面：detail-poster 下的 img
+    let pic = '';
+    const dp = html.indexOf('class="detail-poster"');
+    if (dp >= 0) {
+        const win = html.slice(dp, dp + 1200);
+        pic = firstMatch(win, /<img[^>]*src="([^"]*)"/);
+    }
+    if (!pic) {
+        const og = firstMatch(html, /<meta[^>]*property="og:image"[^>]*content="([^"]*)"/);
+        if (og) pic = og;
+    }
+
+    // 播放块
+    const flags = [];
+    const eps = [];
+    // 注意：wn_link_below_player 在页面 CSS 里也出现一次，
+    // 必须用完整 class 串定位真正的播放块
+    let anchor = html.indexOf('wn_block_link wn_link_below_player');
+    if (anchor < 0) anchor = html.lastIndexOf('wn_link_below_player');
+    if (anchor >= 0) {
+        const win = html.slice(anchor, anchor + 12000);
+        const re = /href="(\/vodplay\/[^"]+)"[^>]*>[\s\S]{0,160}?<span[^>]*>([\s\S]*?)<\/span>/g;
+        let m;
+        let k = 0;
+        while ((m = re.exec(win)) !== null) {
+            k++;
+            const link = m[1];
+            const title = safe(m[2]) || ('线路' + k);
+            flags.push(title);
+            eps.push(title + '$' + abs(link));
+            if (k >= 30) break;
+        }
+        // 兜底：有链接没标题
+        if (!flags.length) {
+            const links = cutAll(win, 'href="', '"', 30);
+            let n = 0;
+            for (let i = 0; i < links.length; i++) {
+                if (!/^\/vodplay\//.test(links[i])) continue;
+                n++;
+                const title = '线路' + n;
+                flags.push(title);
+                eps.push(title + '$' + abs(links[i]));
+            }
+        }
+    }
+
+    // 本站 detail-info 实测恒为空（源码层面就没有输出），元数据改从
+    // 面包屑 + meta+og 兜：这是唯一真实存在的信息源
+    const info = cutOne(html, 'class="detail-info"', '</div>');
+    let txt = decode(info);
+    // cutOne 会切出 ">" 这种残渣，视为空
+    if (txt.replace(/[<>\/\s]/g, '').length < 2) txt = '';
+
+    // ---- 分类（面包屑倒数第二段）----
+    let area = '';
+    const crumb = cutOne(html, 'class="breadcrumbs"', '</div>');
+    if (crumb) {
+        const segs = [];
+        const reC = /<a[^>]*>([\s\S]*?)<\/a>/g;
+        let mc;
+        while ((mc = reC.exec(crumb)) !== null) {
+            const t = decode(mc[1]);
+            if (t && t !== '首页') segs.push(t);
+        }
+        if (segs.length) area = segs[segs.length - 1];
+    }
+
+    // 简介：meta description 实测是全站通用 SEO 文案（不同影片内容完全相同），
+    // 冒充简介只会误导。只用标题里的真实信息拼一句诚实的说明。
+    // 年份：本站 detail-info 无数据，改从封面路径 /upload/vod/20261021-1/ 里取
+    let year = '';
+    const yFromPic = firstMatch(pic, /\/vod\/((?:19|20)\d{2})\d{4}/);
+    if (yFromPic) year = yFromPic;
+    if (!year) year = firstMatch(txt + (name || ''), /(19|20)\d{2}/);
+
+    let content = txt;
+    if (txt.replace(/[<>\/\s]/g, '').length < 2) content = '';
+    if (!content) {
+        const tag = name.replace(/[《》]/g, '');
+        const bits = [];
+        if (area) bits.push('分类：' + area);
+        if (year) bits.push('年份：' + year);
+        if (tag) bits.push('片名：' + tag);
+        content = bits.join(' ｜ ');
+    }
+    content = String(content || '').replace(/^\s*《[^》]*》\s*[|｜]?\s*/, '').trim();
+    if (content.length > 400) content = content.slice(0, 400) + '…';
+
+    // 本站 detail-info 恒空，演职员确实没有；空串会被影视仓渲染成字面 null，
+    // 所以给一个诚实的占位，避免出现 "导演: null"
+    let actor = '暂无';
+    let director = '暂无';
+
+    const out = {
+        vod_id: String(id || ''),
+        vod_name: name || ('影片 ' + id),
+        vod_pic: abs(pic),
+        vod_remarks: '',
+        vod_year: year || '',
+        vod_area: area || '',
+        vod_content: content || '',
+        vod_play_from: flags.join('$$$'),
+        vod_play_url: eps.join('#')
+    };
+    // 本站无演职员数据。空串会被影视仓桥接层渲染成字面 "null"，
+    // 干脆不输出这两个键，让它回落到原生默认值
+    if (actor) out.vod_actor = actor;
+    if (director) out.vod_director = director;
+    return out;
+}
+
+// ---------- 播放解析 ----------
+
+// 从播放页抠 m3u8：优先 "link_pre":"","url":"..."
+function extractPlay(html) {
+    let u = '';
+    if (!html) return '';
+    u = cutOne(html, '"link_pre":"","url":"', '"');
+    if (!u) u = cutOne(html, '"url":"', '"');
+    if (!u) {
+        const m = html.match(/(https?:(?:\\\/|\/)[^"'\s]+\.m3u8[^"'\s]*)/);
+        if (m) u = m[1];
+    }
+    if (!u) return '';
+    // 还原 \/
+    u = u.split('\\/').join('/');
+    return u.trim();
+}
+
+// ---------- 分类表 ----------
+
+let CATS = null;
+
+let HOME_HTML = '';
+
+// 首页只抓一次，分类和列表共用
+function homeHtml() {
+    if (HOME_HTML) return HOME_HTML;
+    HOME_HTML = getPage('/hwyayl/?link=m77.yanjiusuo22222.cc');
+    if (!HOME_HTML || HOME_HTML.length < 5000) HOME_HTML = '';
+    return HOME_HTML;
+}
+
+// 从首页导航区解析真实分类：<a href="/vodtype/52/">中文字幕</a>
+// 站点实际有 60+ 分类，硬编码列表必然漏
+function parseCats(html) {
+    const out = [];
+    if (!html) return out;
+    const seen = {};
+    const re = /href="\/vodtype\/(\d+)\/"[^>]*>([\s\S]{0,60}?)<\/a>/g;
+    let m;
+    while ((m = re.exec(html)) !== null) {
+        const tid = String(m[1]).trim();
+        let nm = decode(m[2]);
+        if (!nm || nm === '更多' || nm.length > 24) continue;
+        if (seen[tid]) continue;
+        seen[tid] = 1;
+        out.push({ type_id: tid, type_name: nm });
+    }
+    return out;
+}
+
+function loadCats() {
+    if (CATS) return CATS;
+    let out = [];
+    try { out = parseCats(homeHtml()); } catch (e) { out = []; }
+    if (!out.length) {
+        // 网络彻底不通时才用兜底硬编码
+        const rows = CATS_RAW.split('#');
+        for (let i = 0; i < rows.length; i++) {
+            const p = (rows[i] || '').split('$');
+            if (p.length < 2) continue;
+            out.push({ type_id: String(p[1]).trim(), type_name: String(p[0]).trim() });
+        }
+    }
+    CATS = out;
+    return out;
+}
+
+// ---------- 生命周期 ----------
+
+function init(ext) {
+    try {
+        let o = ext;
+        if (typeof o === 'string') o = JSON.parse(o || '{}');
+        if (o && o.host) HOST = String(o.host).replace(/\/+$/, '');
+        if (o && o.headers && typeof o.headers === 'object') {
+            for (const k in o.headers) HEADERS[k] = String(o.headers[k]);
+        }
+    } catch (e) { }
+    CATS = null;
+    HOME_HTML = '';
+    return '';
+}
+
+function home() {
+    let cls = [];
+    try { cls = loadCats(); } catch (e) { cls = []; }
+    let list = [];
+    try {
+        list = parseList(homeHtml());
+        if (list.length > 60) list = list.slice(0, 60);
+    } catch (e) { list = []; }
+    return JSON.stringify({ class: cls, filters: {}, list: list });
+}
+
+function homeVod() {
+    let list = [];
+    try {
+        list = parseList(homeHtml());
+        if (list.length > 60) list = list.slice(0, 60);
+    } catch (e) { list = []; }
+    return JSON.stringify({ list: list });
+}
+
+function category(tid, pg, filter, extend) {
+    const page = Number(pg) > 0 ? Number(pg) : 1;
+    const t = String(tid === undefined || tid === null ? '' : tid).trim() || '49';
+    const path = '/vodtype/' + t + '-' + page + '/';
+    let html = '';
+    try { html = getPage(path); } catch (e) { html = ''; }
+    let list = [];
+    try { list = parseList(html); } catch (e) { list = []; }
+
+    // 真实总页数从分页条读：/vodtype/52-363/ 里的最大页码
+    let totalPage = 0;
+    if (html) {
+        const re = new RegExp('/vodtype/' + t + '-(\\d+)/', 'g');
+        let m;
+        while ((m = re.exec(html)) !== null) {
+            const n = Number(m[1]);
+            if (n > totalPage) totalPage = n;
+        }
+    }
+    return JSON.stringify({
+        page: page,
+        pagecount: totalPage || page,
+        limit: list.length || 24,
+        total: totalPage ? totalPage * 24 : 0,
+        list: list
+    });
+}
+
+function detail(id) {
+    let ids = id;
+    if (Object.prototype.toString.call(ids) === '[object Array]') ids = ids.join(',');
+    ids = String(ids || '');
+    if (!ids) return JSON.stringify({ list: [] });
+    const arr = ids.split(',');
+    const out = [];
+    for (let i = 0; i < arr.length; i++) {
+        const one = String(arr[i]).trim();
+        if (!one) continue;
+        let html = '';
+        try { html = getText(HOST + '/voddetail/' + one + '/'); } catch (e) { html = ''; }
+        if (!html) continue;
+        out.push(parseDetail(html, one));
+    }
+    return JSON.stringify({ list: out });
+}
+
+function search(wd, quick, pg) {
+    const page = Number(pg) > 0 ? Number(pg) : 1;
+    const kw = String(wd === undefined || wd === null ? '' : wd).trim();
+    if (!kw) return JSON.stringify({ page: 1, pagecount: 0, limit: 20, total: 0, list: [] });
+
+    // 真实分页格式：/vodsearch/{kw}----------{page}---/
+    const enc = encodeURIComponent(kw);
+    const path = '/vodsearch/' + enc + '----------' + page + '---/';
+    let html = '';
+    try { html = getPage(path); } catch (e) { html = ''; }
+    let list = [];
+    try { list = parseList(html); } catch (e) { list = []; }
+
+    // 页脚写着「共1047条数据,当前1/66页」，直接读总页数
+    let pagecount = page;
+    let total = 0;
+    const mTotal = html.match(/共\s*(\d+)\s*条/);
+    if (mTotal) total = Number(mTotal[1]) || 0;
+    const mPages = html.match(/当前\s*\d+\s*\/\s*(\d+)\s*页/);
+    if (mPages) pagecount = Number(mPages[1]) || page;
+    if (!pagecount || pagecount < page) {
+        if (total && list.length) pagecount = Math.ceil(total / list.length);
+    }
+
+    return JSON.stringify({
+        page: page,
+        pagecount: pagecount,
+        limit: list.length || 16,
+        total: total,
+        list: list
+    });
+}
+
+function play(flag, id, vipFlags) {
+    let s = String(id === undefined || id === null ? '' : id);
+    const cut = s.indexOf('$');
+    if (cut >= 0) s = s.slice(cut + 1);
+    s = s.trim();
+    if (!s) return JSON.stringify({ parse: 0, jx: 0, url: '' });
+
+    // 已经是 m3u8 直链
+    if (/\.(m3u8|mp4|flv|mkv|ts)(\?|$)/i.test(s)) {
+        return JSON.stringify({ parse: 0, jx: 0, url: s, header: HEADERS });
+    }
+
+    // 播放页：抓一次抠真链
+    const pageUrl = abs(s);
+    let real = '';
+    try { real = extractPlay(getText(pageUrl)); } catch (e) { real = ''; }
+
+    if (real && /^https?:\/\//i.test(real)) {
+        const o = real.match(/^(https?:\/\/[^\/]+)/);
+        const hd = { 'User-Agent': UA };
+        if (o) hd['Referer'] = o[1] + '/';
+        return JSON.stringify({ parse: 0, jx: 0, url: real, header: hd });
+    }
+
+    // 抠不到就交嗅探器
+    return JSON.stringify({ parse: 1, jx: 0, url: pageUrl, header: HEADERS });
+}
+
+// ---------- 杂项 ----------
+
+function isVideo(url) {
+    return /\.(m3u8|mp4|flv|mkv|ts|mov)(\?|$)/i.test(String(url || ''));
+}
+function sniffer() { return false; }
+function action(a) { return JSON.stringify({}); }
+function proxy(p) { return JSON.stringify([]); }
+function destroy() { }
+
+export default {
+    init: init,
+    home: home,
+    homeVod: homeVod,
+    category: category,
+    detail: detail,
+    search: search,
+    play: play,
+    isVideo: isVideo,
+    sniffer: sniffer,
+    action: action,
+    proxy: proxy,
+    destroy: destroy
+};
