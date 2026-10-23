@@ -365,14 +365,14 @@ function play(flag, id, vipFlags) {
             var hr = request(pickHost() + '/video/' + vid + '/ep-' + ep + '/', { method: 'GET' });
             var hp = s(hr && (hr.content || hr.body) || '');
             var sm = hp.match(/<source[^>]*src=\"(https?:[^\"]+)\"/);
-            if (sm && sm[1]) url = sm[1];
+            if (sm && sm[1]) url = sm[1].replace(/&amp;/g, '&');
             else { var mm = hp.match(/\"video_url\":\"([^\"]+)\"/); if (mm && mm[1]) url = mm[1].replace(/\\u002F/g, '/'); }
         } catch (e2) { }
     }
     if (!url) url = 'https://li1q.h2na6qa39.cc/#取流失败-' + vid + '-ep' + ep;
         if (url.indexOf('http') === 0 && url.indexOf('#') < 0) {
         try {
-            var wm = request(url, { method: 'GET' });
+            var wm = request(url.replace(/&amp;/g, '&'), { method: 'GET' });
             var mt = s(wm && (wm.content || wm.body) || '');
             var wl = mt.split('\n');
             var wseg = '', wkey = '';
@@ -382,7 +382,7 @@ function play(flag, id, vipFlags) {
                 if (!wseg && ln && ln.indexOf('#') !== 0) { wseg = ln.indexOf('http') === 0 ? ln : (mt.indexOf('https://') >= 0 && ln.indexOf('/') === 0 ? mt.split('://')[0] + '://' + mt.split('://')[1].split('/')[0] + ln : ln); }
                 if (wseg && wkey) break;
             }
-            if (wkey) { try { request(wkey, { method: 'GET' }); } catch (wke) { } }
+            if (wkey) { try { request(wkey.indexOf('http') === 0 ? wkey.replace(/&amp;/g, '&') : url.substring(0, url.lastIndexOf('/') + 1) + wkey, { method: 'GET' }); } catch (wke) { } }
             if (wseg && wseg.indexOf('http') === 0) {
                 var wr = request(wseg, { method: 'GET', headers: { Range: 'bytes=0-65535' } });
             }
