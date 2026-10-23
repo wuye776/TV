@@ -26,17 +26,24 @@ function request(url, opt) {
     var o = opt || {};
     o.headers = stdHeaders(o.headers);
     o.async = false;
-    if (typeof http === 'function') return http(url, o);
-    if (typeof net !== 'undefined' && net && typeof net.http === 'function') return net.http(url, o);
+    // QuickJS 兼容: 直接调可能this=undefined炸(TypeError::BindFailed), bind 后再调
+    var f = null;
+    try { if (typeof http === 'function') f = http; } catch (e1) { }
+    try { if (!f && typeof net !== 'undefined' && net && typeof net.http === 'function') f = net.http; } catch (e2) { }
+    if (f) {
+        try { return f.call(null, url, o); } catch (e3) { try { return f.bind(null)(url, o); } catch (e4) { return { code: 0, content: '' }; } }
+    }
     return { code: 0, content: '' };
 }
 
 // 域名探活: GET size=1 最小接口, 2xx 且 JSON 可解析 = 活
+// 稳: HTTP 层独立判活(有响应=网络通), JSON 解析失败只拒该域不抛
 function hostAlive(h) {
     try {
         var r = request(h + '/api/videos/category/ai-manju?page=1&size=1', { method: 'GET' });
         var b = s(r && (r.content !== undefined ? r.content : r.body !== undefined ? r.body : r));
-        return r.code === 200 && b.indexOf('"items"') >= 0;
+        if (!b || !r.code) return false;
+        return r.code === 200 && (b.indexOf('"items"') >= 0 || b.indexOf('"status"') >= 0);
     } catch (e) { return false; }
 }
 
@@ -350,7 +357,7 @@ function play(flag, id, vipFlags) {
     if (raw.charAt(0) === 'p') {
         var pid = raw.substring(1);
         var pd = reqJSON(pickHost() + '/api/posts/' + pid);
-        var pu = s(pd && pd.video_url);
+        var pu = s(pd && pd.video_url).replace(/&amp;/g, '&');
         if (!pu) pu = 'https://li1q.h2na6qa39.cc/#吃瓜取流失败-' + pid;
         return JSON.stringify({ parse: 0, playUrl: '', url: pu, header: hdr });
     }
@@ -358,7 +365,7 @@ function play(flag, id, vipFlags) {
     if (!m) return JSON.stringify({ parse: 0, playUrl: '', url: '', header: hdr });
     var vid = m[1], ep = num(m[2], 1);
     var d = getJSON('/api/videos/' + vid + '?ep=' + ep);
-    var url = s(d.video_url);
+    var url = s(d.video_url).replace(/&amp;/g, '&');
     if (ep > 1 && url) {
         // API ?ep= 不换源(实测分片同名), 网页 /video/vid/ep-N/ 的 <source> 才是真集
         try {
@@ -366,7 +373,7 @@ function play(flag, id, vipFlags) {
             var hp = s(hr && (hr.content || hr.body) || '');
             var sm = hp.match(/<source[^>]*src=\"(https?:[^\"]+)\"/);
             if (sm && sm[1]) url = sm[1].replace(/&amp;/g, '&');
-            else { var mm = hp.match(/\"video_url\":\"([^\"]+)\"/); if (mm && mm[1]) url = mm[1].replace(/\\u002F/g, '/'); }
+            else { var mm = hp.match(/\"video_url\":\"([^\"]+)\"/); if (mm && mm[1]) url = mm[1].replace(/\\u002F/g, '/').replace(/&amp;/g, '&'); }
         } catch (e2) { }
     }
     if (!url) url = 'https://li1q.h2na6qa39.cc/#取流失败-' + vid + '-ep' + ep;
