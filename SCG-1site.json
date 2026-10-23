@@ -1,1 +1,1 @@
-{"spider":"","logo":"","sites":[{"key":"scg","name":"SCG·直播","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@PENDING_COMMIT/scg.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60}]}
+{"spider":"","logo":"","sites":[{"key":"scg","name":"SCG·直播","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60}]}
