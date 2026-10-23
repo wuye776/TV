@@ -1,4 +1,4 @@
-// 真黄果短剧 type:3 spider v2
+// 真黄果短剧 type:3 spider v5
 // 站点: *.h2na6qa39.cc (泛子域, CloudFront, CN=*.h2na6qa39.cc)
 // 域名自愈: init 拉发布页 publish.js 解析 urls[] 插入池子, 探活切换
 // API: /api/videos/category/<ch> | /api/videos/tag/<中文> | /api/videos/<id>[?ep=N] | /api/posts | /api/search?q=
@@ -62,7 +62,7 @@ function reqJSON(url) {
 function getJSON(path) {
     pickHost();
     var d = reqJSON(HOST + path);
-    if (d && (d.items !== undefined || d.pagination !== undefined)) return d;
+    if (d && (d.items !== undefined || d.pagination !== undefined || d.title !== undefined)) return d;
     // 失败换域重试一轮
     HOST_OK = false;
     pickHost();
@@ -92,7 +92,8 @@ function discoverHosts() {
     for (var i = 0; i < found.length; i++) {
         var cands = ['https://nju.' + found[i], 'https://' + found[i].replace(/\/$/, '')];
         for (var c = 0; c < cands.length; c++) {
-            if (HOST_POOL.indexOf(cands[c]) < 0) { HOST_POOL.unshift(cands[c]); added.push(cands[c]); }
+            // push 到尾部(不 unshift): 裸 .cc 域被污染, 探活 30s 超时会拖死换域链
+            if (HOST_POOL.indexOf(cands[c]) < 0) { HOST_POOL.push(cands[c]); added.push(cands[c]); }
         }
     }
     return added;
@@ -308,7 +309,7 @@ function detail(id) {
             vod_year: s(pd.created_at || '').substring(0, 10),
             vod_remarks: '吃瓜',
             vod_director: s((pd.author || {}).name),
-            vod_content: s(pd.content || pd.desc || '').replace(/<[^>]+>/g, ' ').substring(0, 500),
+            vod_content: s(pd.description || pd.intro || pd.content || pd.desc || '').replace(/[\r\n]+/g, ' ').replace(/<[^>]+>/g, ' ').substring(0, 500),
             vod_class: (pd.tags || []).join(','),
             vod_play_from: '黄果在线',
             vod_play_url: '正片$' + vid
@@ -322,8 +323,7 @@ function detail(id) {
     var play = [];
     if (eps) {
         for (var e = 0; e < eps.length; e++) {
-            var t = trim(s(eps[e].title)) || ('第' + s(eps[e].ep_num) + '集');
-            play.push(t.replace(/[$#]/g, ' ') + '$' + vid + '-' + s(eps[e].ep_num));
+            play.push('第' + s(eps[e].ep_num) + '集$' + vid + '-' + s(eps[e].ep_num));
         }
     } else {
         for (var n = 1; n <= count; n++) play.push('第' + n + '集$' + vid + '-' + n);
@@ -336,7 +336,7 @@ function detail(id) {
         vod_remarks: (d.score ? s(d.score) + '分 · ' : '') + '全' + count + '集' + (d.is_finished ? '·完结' : ''),
         vod_actor: (d.actors || []).join(','),
         vod_director: s((d.author || {}).name || d.author),
-        vod_content: s(d.description).substring(0, 500),
+        vod_content: s(d.description || d.intro || '').replace(/[\r\n]+/g, ' ').replace(/<[^>]+>/g, ' ').substring(0, 500),
         vod_class: (d.tags || []).join(','),
         vod_play_from: '黄果在线',
         vod_play_url: play.join('#')
