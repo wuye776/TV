@@ -359,8 +359,36 @@ function play(flag, id, vipFlags) {
     var vid = m[1], ep = num(m[2], 1);
     var d = getJSON('/api/videos/' + vid + '?ep=' + ep);
     var url = s(d.video_url);
+    if (ep > 1 && url) {
+        // API ?ep= 不换源(实测分片同名), 网页 /video/vid/ep-N/ 的 <source> 才是真集
+        try {
+            var hr = request(pickHost() + '/video/' + vid + '/ep-' + ep + '/', { method: 'GET' });
+            var hp = s(hr && (hr.content || hr.body) || '');
+            var sm = hp.match(/<source[^>]*src=\"(https?:[^\"]+)\"/);
+            if (sm && sm[1]) url = sm[1];
+            else { var mm = hp.match(/\"video_url\":\"([^\"]+)\"/); if (mm && mm[1]) url = mm[1].replace(/\\u002F/g, '/'); }
+        } catch (e2) { }
+    }
     if (!url) url = 'https://li1q.h2na6qa39.cc/#取流失败-' + vid + '-ep' + ep;
-    return JSON.stringify({ parse: 0, playUrl: '', url: url, header: hdr });
+        if (url.indexOf('http') === 0 && url.indexOf('#') < 0) {
+        try {
+            var wm = request(url, { method: 'GET' });
+            var mt = s(wm && (wm.content || wm.body) || '');
+            var wl = mt.split('\n');
+            var wseg = '', wkey = '';
+            for (var wi = 0; wi < wl.length; wi++) {
+                var ln = trim(wl[wi]);
+                if (!wkey && ln.indexOf('#EXT-X-KEY') === 0) { var km = ln.match(/URI=."([^"]+)"/); if (km) wkey = km[1]; }
+                if (!wseg && ln && ln.indexOf('#') !== 0) { wseg = ln.indexOf('http') === 0 ? ln : (mt.indexOf('https://') >= 0 && ln.indexOf('/') === 0 ? mt.split('://')[0] + '://' + mt.split('://')[1].split('/')[0] + ln : ln); }
+                if (wseg && wkey) break;
+            }
+            if (wkey) { try { request(wkey, { method: 'GET' }); } catch (wke) { } }
+            if (wseg && wseg.indexOf('http') === 0) {
+                var wr = request(wseg, { method: 'GET', headers: { Range: 'bytes=0-65535' } });
+            }
+        } catch (we) { }
+    }
+return JSON.stringify({ parse: 0, playUrl: '', url: url, header: hdr });
 }
 
 function search(wd, quick) {
