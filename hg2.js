@@ -9,6 +9,8 @@ var PUB_PAGES = ['https://huangguoai.pages.dev', 'https://huang-guo.pages.dev'];
 var HOST_POOL = ['https://nju.h2na6qa39.cc', 'https://hit.h2na6qa39.cc', 'https://fdu.h2na6qa39.cc', 'https://zju.h2na6qa39.cc', 'https://li1q.h2na6qa39.cc'];
 var HOST = HOST_POOL[0];
 var HOST_OK = false;
+// 吃瓜预热缓存: init 时同步拉 page1-3, category/posts 直接吃缓存(3页*30=90条本地筛)
+var POST_CACHE = null;
 
 function s(x) { return x == null ? '' : String(x); }
 function trim(x) { return s(x).replace(/^\s+|\s+$/g, ''); }
@@ -32,7 +34,7 @@ function request(url, opt) {
 // 域名探活: GET size=1 最小接口, 2xx 且 JSON 可解析 = 活
 function hostAlive(h) {
     try {
-        var r = request(h + '/api/videos/category/ai-manju?page=1&size=1', { method: 'GET', timeout: 8 });
+        var r = request(h + '/api/videos/category/ai-manju?page=1&size=1', { method: 'GET' });
         var b = s(r && (r.content !== undefined ? r.content : r.body !== undefined ? r.body : r));
         return r.code === 200 && b.indexOf('"items"') >= 0;
     } catch (e) { return false; }
@@ -73,7 +75,7 @@ function discoverHosts() {
     var found = [];
     for (var p = 0; p < PUB_PAGES.length; p++) {
         try {
-            var r = request(PUB_PAGES[p] + '/publish.js', { method: 'GET', timeout: 10 });
+            var r = request(PUB_PAGES[p] + '/publish.js', { method: 'GET' });
             var b = s(r && (r.content !== undefined ? r.content : r.body !== undefined ? r.body : r));
             var m = b.match(/var\s+urls\s*=\s*\[([\s\S]*?)\]/);
             if (!m) continue;
@@ -150,21 +152,47 @@ function postCard(it) {
         vod_name: s(it.title),
         vod_pic: toHttp(s(it.cover)),
         vod_remarks: '吃瓜 · ' + s(it.publish_time || '').substring(5, 10),
-        vod_year: s(it.created_at || '').substring(0, 10),
+        vod_year: s(it.publish_time || it.created_at || '').substring(0, 10),
         vod_class: (it.tags || []).join(',')
     };
 }
 
-// 封面提速: https→http 省 TLS 握手（pic.drleao.cn 80/443 同速但 https 偶发 10s 超时）
+function prefetchPosts() {
+    if (POST_CACHE) return POST_CACHE;
+    var pool = [], seen = {};
+    for (var p = 1; p <= 3; p++) {
+        try {
+            var d = getJSON('/api/posts?page=' + p + '&size=30');
+            var its = d.items || [];
+            if (!its.length) break;
+            for (var i = 0; i < its.length; i++) {
+                var v = postCard(its[i]);
+                if (v && !seen[v.vod_id]) { seen[v.vod_id] = 1; pool.push(v); }
+            }
+        } catch (e) { break; }
+    }
+    POST_CACHE = pool;
+    return pool;
+}
+
+// 封面换血: pic.drleao.cn 吐 AES 密文(播放器当图=花屏/不显示)
+// new2.drleao.cn 同 path 是明文 JPEG(站详情页 og 通道), 去 auth_key 照出
+// 保留 http:// 前缀省 TLS 握手(该域 80/443 同速, https 偶发 10s 超时)
 function toHttp(u) {
-    if (s(u).indexOf('https://pic.drleao.cn') === 0) return 'http://' + u.substring(8);
-    return s(u);
+    var u2 = s(u);
+    if (u2.indexOf('https://pic.drleao.cn') === 0) u2 = 'http://new2.drleao.cn' + u2.substring(21);
+    if (u2.indexOf('http://pic.drleao.cn') === 0) u2 = 'http://new2.drleao.cn' + u2.substring(20);
+    var q = u2.indexOf('?auth_key=');
+    if (q > 0) u2 = u2.substring(0, q);
+    return u2;
 }
 
 function init(cfg) {
     // 先静态池探活, 再发布页发现(异步补池)
     pickHost();
     try { discoverHosts(); } catch (e) { }
+    // 吃瓜预热: 首次进入吃瓜频道 0 网络直出(3页已在手)
+    try { prefetchPosts(); } catch (e) { }
     return JSON.stringify({ code: 1, msg: 'ok' });
 }
 
@@ -176,11 +204,19 @@ function home(filter) {
     }
     var tabVals = [{ n: '全部', v: '' }];
     for (var t = 0; t < TABS.length; t++) tabVals.push({ n: TABS[t][1], v: TABS[t][0] });
+    var ptagVals = [{ n: '全部标签', v: '' }];
+    for (var g2 = 0; g2 < TAGS.length && g2 < 40; g2++) ptagVals.push({ n: TAGS[g2][1], v: TAGS[g2][1] });
     var tagVals = [{ n: '全部标签', v: '' }];
     for (var g = 0; g < TAGS.length; g++) tagVals.push({ n: TAGS[g][1], v: encodeURIComponent(TAGS[g][1]) });
+    var dateVals = [{ n: '全部日期', v: '' }];
+    var dy = 2026, dm = 10;
+    for (var dd = 0; dd < 12; dd++) {
+        dateVals.push({ n: dy + '-' + (dm < 10 ? '0' + dm : dm), v: dy + '-' + (dm < 10 ? '0' + dm : dm) });
+        dm--; if (dm < 1) { dm = 12; dy--; }
+    }
     for (var c = 0; c < CHANNELS.length; c++) {
         var fl = [{ key: 'tab', name: '排序', value: tabVals }, { key: 'tag', name: '标签筛选', value: tagVals }];
-        if (CHANNELS[c][0] === 'posts') fl = [];
+        if (CHANNELS[c][0] === 'posts') fl = [{ key: 'date', name: '日期', value: dateVals }, { key: 'ptag', name: '标签', value: ptagVals }];
         filters[CHANNELS[c][0]] = fl;
     }
     return JSON.stringify({ class: classes, filters: filters });
@@ -221,16 +257,21 @@ function category(tid, pg, filter, extend) {
     try { tag = decodeURIComponent(tag); } catch (e) { }
     var list = [], pagecount = 1, total = 0;
     if (tid === 'posts') {
-        var dp = getJSON('/api/posts?page=' + pg + '&size=30');
-        var its = dp.items || [];
-        var pagp = dp.pagination || {};
-        total = num(pagp.total, its.length);
-        pagecount = Math.max(1, Math.ceil(total / (num(pagp.size, 30) || 30)));
-        var sp = {};
-        for (var ip = 0; ip < its.length; ip++) {
-            var vp = postCard(its[ip]);
-            if (vp && !sp[vp.vod_id]) { sp[vp.vod_id] = 1; list.push(vp); }
+        // /api/posts 不吃任何筛参: init 已预热 page1-3 进 POST_CACHE, 本地过日期+标签
+        var pdate = trim(s(extend.date || ''));
+        var ptag = trim(s(extend.ptag || ''));
+        var all = prefetchPosts();
+        var pool = [];
+        for (var iq = 0; iq < all.length; iq++) {
+            var itq = all[iq];
+            if (pdate && s(itq.vod_year || '').indexOf(pdate) !== 0) continue;
+            if (ptag && s(itq.vod_class || '').split(',').indexOf(ptag) < 0) continue;
+            pool.push(itq);
         }
+        total = pool.length;
+        pagecount = 1;
+        var fromI = (pg - 1) * 30;
+        for (var pz = fromI; pz < pool.length && pz < fromI + 30; pz++) list.push(pool[pz]);
     } else {
         var d;
         if (tag) {
