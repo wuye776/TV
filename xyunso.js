@@ -283,6 +283,11 @@ function parsePlayUrl(html) {
 }
 
 // Missplay.php 里直接列出各清晰度 m3u8（带 expires + signature）
+function firstMatch(str, re) {
+    const m = String(str || '').match(re);
+    return m ? m[1] : '';
+}
+
 function parseQuality(html) {
     const re = /(https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*)/g;
     const seen = {};
@@ -390,7 +395,20 @@ function play(flag, id, vipFlags) {
     // 其余（miss 的短 id、17cuk 的相对路径）都要过 /Player/<脚本>.php 换真地址
     let html = '';
     try { html = fetchText(uu); } catch (e) { }
-    const qs = parseQuality(html);
+    let qs = parseQuality(html);
+
+    // AV18 这类是两层：/Player/Av18play.php 里只有阿里播放器壳子，
+    // 真地址在它内嵌的 18av.mm-cg.com/js/player/play.php?...&id=... 那一层。
+    // 2026-10-24 实测：该页 <script> 里 hardcode 外部 play.php，再抓一次才有 m3u8。
+    if (!qs.length && html) {
+        const ext = firstMatch(html, /(https?:\/\/[^"'<>\s\\]*(?:play|player)\.php[^"'<>\s\\]*)/);
+        if (ext) {
+            let h2 = '';
+            try { h2 = bodyOf(request(ext, { headers: HEADERS })); } catch (e) { h2 = ''; }
+            qs = parseQuality(h2);
+        }
+    }
+
     if (!qs.length) {
         // 换不到就原样丢出去，至少 Referer 已带
         return JSON.stringify({ parse: 0, playUrl: '', url: /^https?:/i.test(uu) ? uu : absUrl(uu), header: hdr });
