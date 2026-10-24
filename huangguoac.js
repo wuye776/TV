@@ -74,8 +74,18 @@ const CATS = [
     { slug: 'hanman', name: '成人韩漫' }
 ];
 
-// 标签走站内搜索兜底（/tag/ 页不分页，翻页 404）
-const HOT_TAGS = ['现代', '都市', '职场', '大女主', '甜宠', '古风', '校园', '重生', '逆袭', '悬疑'];
+// 站点标签全量：首页导航实测 45 个（slug 由 /tag/<slug>/ 得到，中文为锚文本）。
+// 标签页按标签精确筛选且支持分页（现代 35 页），比站内搜索准。
+const TAGS = [
+    ['xiandai', '现代'], ['dushi', '都市'], ['shunv', '熟女'], ['ntr', 'ntr'], ['gufeng', '古风'], ['xiuxian', '修仙'],
+    ['xianxia', '仙侠'], ['zhichang', '职场'], ['gongting', '宫廷'], ['nuelian', '虐恋'], ['lvmao', '绿帽'], ['chaonengli', '超能力'],
+    ['xuanhuan', '玄幻'], ['hougong', '后宫'], ['naodong', '脑洞'], ['qihuan', '奇幻'], ['sm', 'sm'], ['nuli', '奴隶'],
+    ['haomen', '豪门'], ['luanlun', '乱伦'], ['xitong', '系统'], ['nixi', '逆袭'], ['jiedi', '姐弟'], ['muzi', '母子'],
+    ['wanghong', '网红'], ['danvzhu', '大女主'], ['zhongwen-zimu', '中文字幕'], ['yanjingniang', '眼镜娘'], ['yujie', '御姐'], ['koujiao', '口交'],
+    ['qiangzhi', '强制'], ['wuma', '无码'], ['gonggongchanghe', '公共场合'], ['baihe', '百合'], ['meimei', '妹妹'], ['3p', '3P'],
+    ['tongxue', '同学'], ['yishijie', '异世界'], ['shishneg', '师生'], ['nvjiaoshi', '女教师'], ['jk', 'JK'], ['chihan', '痴汉'],
+    ['youxi', '游戏'], ['tongshi', '同事'], ['wuxia', '武侠']
+];
 
 // ---------- 网络 ----------
 
@@ -370,6 +380,9 @@ function epName(n) { return '第' + n + '集'; }
 function catPath(slug, page) {
     return '/' + slug + '/' + (page > 1 ? page + '/' : '');
 }
+function tagPath(slug, page) {
+    return '/tag/' + slug + '/' + (page > 1 ? 'page/' + page + '/' : '');
+}
 function searchPath(q, page) {
     return '/search/video/' + encodeURIComponent(q) + '/' + (page > 1 ? page + '/' : '');
 }
@@ -477,13 +490,15 @@ function classList() {
     for (let i = 0; i < CATS.length; i++) {
         cls.push({ type_id: 'c:' + CATS[i].slug, type_name: CATS[i].name });
     }
-    for (let i = 0; i < HOT_TAGS.length; i++) {
-        cls.push({ type_id: 't:' + HOT_TAGS[i], type_name: HOT_TAGS[i] });
-    }
     return cls;
 }
 
-function filtersFor(tid) { return {}; }
+// 每个 type_id 都必须挂同一份标签筛选，漏一个客户端在该分类点筛选就崩（硬规范第 6 条）
+function filtersFor(tid) {
+    const vals = [{ n: '全部', v: '' }];
+    for (let i = 0; i < TAGS.length; i++) vals.push({ n: TAGS[i][1], v: TAGS[i][0] });
+    return [{ key: 'tag', name: '标签', value: vals }];
+}
 
 // ---------- 入口 ----------
 
@@ -508,7 +523,7 @@ function home(filter) {
     const r = listPage(catPath('duanju', 1));
     const cls = classList();
     const filters = {};
-    for (let i = 0; i < cls.length; i++) filters[cls[i].type_id] = {};
+    for (let i = 0; i < cls.length; i++) filters[cls[i].type_id] = filtersFor(cls[i].type_id);
     return JSON.stringify({ class: cls, list: r.list, filters: filters });
 }
 
@@ -524,11 +539,21 @@ function category(tid, pg, filter, extend) {
         const items = diagItems();
         return JSON.stringify({ page: 1, pagecount: 1, limit: items.length, total: items.length, list: items });
     }
+    // 标签筛选走 /tag/<slug>/ 页（站内真筛选，带总页数）；未选标签时维持原分类路径
+    let etag = '';
+    try {
+        let e = extend;
+        if (typeof e === 'string') e = JSON.parse(e || '{}');
+        if (e && e.tag) etag = String(e.tag).trim();
+    } catch (err) { etag = ''; }
+
     let path = '';
-    if (t.indexOf('c:') === 0) {
+    if (etag) {
+        path = tagPath(etag, page);
+    } else if (t.indexOf('c:') === 0) {
         path = catPath(t.slice(2), page);
     } else if (t.indexOf('t:') === 0) {
-        path = searchPath(t.slice(2), page);
+        path = tagPath(t.slice(2), page);
     } else if (/^[a-z-]+$/.test(t)) {
         path = catPath(t, page);
     } else {
