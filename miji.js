@@ -19,8 +19,44 @@ const UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, 
 let HOST = 'https://vke-urwg-3wa.xfleet-jul03.cc';
 let HEADERS = { 'User-Agent': UA };
 
-// 分类表：name$id，用 # 分隔
-const CATS_RAW = '成人短剧$49#更多$200#综合传媒$201#麻豆传媒$202#葫芦影业$203#猫爪影像$204#天美传媒$205#果冻传媒$206#91制片厂$207#蜜桃传媒$208#更多番号$300#200GANA$301#300MIUM$302#259LUXU$305#261ARA$306#277DCV$307#300MAAN$308#300NTK$309#综合番号$350';
+// 分类兜底表：name$id，用 # 分隔。正常走首页导航动态解析，这里只在首页抓不到时兜底。
+// id 全部按 2026-10-24 站点导航实测核对（分组标题 45/46/47/200/300/400/500 不是分类，不列）。
+const CATS_RAW = '成人短剧$66#国产精品$49#国产乱伦$55#无码流出$50#日本高清$51#中文字幕$52#欧美极品$53#动漫精品$54' +
+    '#国产热瓜$65#主播诱惑$64#良家少女$63#淫荡熟女$61#三级伦理$62#自拍偷拍$57#旗袍风情$58#岛国小女$59' +
+    '#剧情解说$68#网红黑料$71#清纯女生$73#同性世界$70#国产高清$72#美乳妹妹$69#黑料网曝$67#SM变态$56' +
+    '#综合传媒$201#麻豆传媒$202#葫芦影业$203#猫爪影像$204#天美传媒$205#果冻传媒$206#91制片厂$207#蜜桃传媒$208' +
+    '#综合番号$350#200GANA$301#259LUXU$305#261ARA$306#277DCV$307#300MIUM$302#300MAAN$308#300NTK$309' +
+    '#夢乃愛華$401#波多野结衣$402#三上悠亚$403#河北彩花$404#高桥圣子$405#葵司$406#水卜櫻$407#紗倉真菜$408' +
+    '#桃乃木香奈$409#安齋拉拉$410#天使萌$411#相澤南$412#櫻空桃$413#Miru$414#羽咲美晴$415#山岸逢花$416' +
+    '#七澤米亞$417#松本一香$418#木下日葵$419#二階堂夢$420#田中宁宁$421#藤森里穂$422#稻场流花$423#久留木玲$424' +
+    '#有栖花绯$425#沙月芽衣$426#東條夏$427#北野望$428#明里紬$429#天音真比奈$430#早野詩$431#篠田優$432' +
+    '#神宮寺奈緒$433#逢見梨花$434#藍芽美月$435#鈴木心春$436#有坂深雪$437#架乃由羅$438#美之嶋惠理$439#三宮椿$440' +
+    '#川上奈奈美$441#湊莉久$442#小島南$443#平手真菜$444#新川愛七$445#鷲尾芽衣$446' +
+    '#酒店$513#小宝寻花$514#91系列$516#综合探花$511#午夜寻花$515#91沈先生$501#文轩探花$502#鸭哥探花$506';
+
+// 标签库：站点「热门搜索」全量词（2026-10-24 站点实测）。
+// 本站分类页没有筛选条、/vodshow 也是 404，唯一真实生效的筛选通道是全站搜索
+// /vodsearch/<词>，所以标签筛选走搜索路径，不是分类内过滤。
+const TAG_WORDS = '私拍 乱伦 轮奸 老阿姨 少女网 性奴 白虎 骚货 国产 精品 90后 黑丝 母子 互插 奶奶 毁三观 ' +
+    '萌妹 喷水 热瓜 重口 熟女 00后 网曝门 兄妹 美母 糖心 无套 中文 插B 巨乳 萝莉控 网红 自慰 处女 骚女 ' +
+    '鸡巴大 猎奇 短发 捆绑 黑人 人妻 网曝 强奸 妈妈 20岁 一本道 口爆 内射 经典 热播 鬼父 小姐妹 吃瓜';
+
+let TAG_LIST = null;
+
+function tagList() {
+    if (TAG_LIST) return TAG_LIST;
+    const raw = TAG_WORDS.split(' ');
+    const seen = {};
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+        const w = String(raw[i] || '').trim();
+        if (!w || seen[w]) continue;
+        seen[w] = 1;
+        out.push(w);
+    }
+    TAG_LIST = out;
+    return out;
+}
 
 // ---------- 网络（全同步） ----------
 
@@ -377,19 +413,29 @@ function parseCats(html) {
     return out;
 }
 
+// 兜底表是全量实测结果（首页导航只露 8 位女优，全量 46 位已并进来），
+// 首页解析结果只用于补站点改版后新冒出来的分类，不做主表——首页本身也要抓来出列表，不额外发请求。
 function loadCats() {
     if (CATS) return CATS;
-    let out = [];
-    try { out = parseCats(homeHtml()); } catch (e) { out = []; }
-    if (!out.length) {
-        // 网络彻底不通时才用兜底硬编码
-        const rows = CATS_RAW.split('#');
-        for (let i = 0; i < rows.length; i++) {
-            const p = (rows[i] || '').split('$');
-            if (p.length < 2) continue;
-            out.push({ type_id: String(p[1]).trim(), type_name: String(p[0]).trim() });
-        }
+    const out = [];
+    const have = {};
+    const rows = CATS_RAW.split('#');
+    for (let i = 0; i < rows.length; i++) {
+        const p = (rows[i] || '').split('$');
+        if (p.length < 2) continue;
+        const tid = String(p[1]).trim();
+        if (have[tid]) continue;
+        have[tid] = 1;
+        out.push({ type_id: tid, type_name: String(p[0]).trim() });
     }
+    let live = [];
+    try { live = parseCats(homeHtml()); } catch (e) { live = []; }
+    for (let j = 0; j < live.length; j++) {
+        if (have[live[j].type_id]) continue;
+        have[live[j].type_id] = 1;
+        out.push(live[j]);
+    }
+    out.push({ type_id: 'tag', type_name: '标签合集' });
     CATS = out;
     return out;
 }
@@ -418,7 +464,20 @@ function home() {
         list = parseList(homeHtml());
         if (list.length > 60) list = list.slice(0, 60);
     } catch (e) { list = []; }
-    return JSON.stringify({ class: cls, filters: {}, list: list });
+    return JSON.stringify({ class: cls, filters: buildFilters(cls), list: list });
+}
+
+// 每个 type_id 都要挂同一份标签筛选，漏一个客户端在该分类点筛选就崩（硬规范第 6 条）。
+// 标签入口单独开一个「标签合集」tab，与普通分类走两条路径。
+function buildFilters(cls) {
+    const vals = [{ n: '全部', v: '' }];
+    const words = tagList();
+    for (let i = 0; i < words.length; i++) vals.push({ n: words[i], v: words[i] });
+    const one = [{ key: 'tag', name: '标签', value: vals }];
+    const out = {};
+    out['tag'] = one;
+    for (let k = 0; k < cls.length; k++) out[cls[k].type_id] = one;
+    return out;
 }
 
 function homeVod() {
@@ -430,9 +489,48 @@ function homeVod() {
     return JSON.stringify({ list: list });
 }
 
+function searchByTag(w, page) {
+    const path = '/vodsearch/' + encodeURIComponent(w) + '----------' + page + '---/';
+    let html = '';
+    try { html = getPage(path); } catch (e) { html = ''; }
+    let list = [];
+    try { list = parseList(html); } catch (e) { list = []; }
+    let total = 0;
+    const mTotal = html.match(/共\s*(\d+)\s*条/);
+    if (mTotal) total = Number(mTotal[1]) || 0;
+    let pagecount = page;
+    const mPages = html.match(/当前\s*\d+\s*\/\s*(\d+)\s*页/);
+    if (mPages) pagecount = Number(mPages[1]) || page;
+    if (pagecount < page) pagecount = page;
+    if (!list.length && html && html.length > 500) pagecount = page > 1 ? page - 1 : 1;
+    return JSON.stringify({
+        page: page,
+        pagecount: pagecount,
+        limit: list.length || 24,
+        total: total || pagecount * 24,
+        list: list
+    });
+}
+
+function tagOf(extend, tid) {
+    let e = extend;
+    if (typeof e === 'string') {
+        try { e = JSON.parse(e); } catch (err) { e = null; }
+    }
+    let w = e && e.tag ? String(e.tag).trim() : '';
+    if (!w && tid === 'tag') w = tagList()[0] || '';
+    return w;
+}
+
 function category(tid, pg, filter, extend) {
     const page = Number(pg) > 0 ? Number(pg) : 1;
     const t = String(tid === undefined || tid === null ? '' : tid).trim() || '49';
+
+    // 标签筛选走全站搜索（本站无分类内筛选参数，见 TAG_WORDS 上方说明）。
+    // 「标签合集」tab 未选标签时取第一个词，避免空白页。
+    const tag = tagOf(extend, t);
+    if (tag) return searchByTag(tag, page);
+
     const path = '/vodtype/' + t + '-' + page + '/';
     let html = '';
     try { html = getPage(path); } catch (e) { html = ''; }
