@@ -266,33 +266,36 @@ function parseDetail(html, id) {
     const eps = [];
     // 注意：wn_link_below_player 在页面 CSS 里也出现一次，
     // 必须用完整 class 串定位真正的播放块
-    let anchor = html.indexOf('wn_block_link wn_link_below_player');
-    if (anchor < 0) anchor = html.lastIndexOf('wn_link_below_player');
-    if (anchor >= 0) {
-        const win = html.slice(anchor, anchor + 12000);
-        const re = /href="(\/vodplay\/[^"]+)"[^>]*>[\s\S]{0,160}?<span[^>]*>([\s\S]*?)<\/span>/g;
-        let m;
-        let k = 0;
-        while ((m = re.exec(win)) !== null) {
-            k++;
-            const link = m[1];
-            const title = safe(m[2]) || ('线路' + k);
-            flags.push(title);
-            eps.push(title + '$' + abs(link));
-            if (k >= 30) break;
-        }
-        // 兜底：有链接没标题
-        if (!flags.length) {
-            const links = cutAll(win, 'href="', '"', 30);
-            let n = 0;
-            for (let i = 0; i < links.length; i++) {
-                if (!/^\/vodplay\//.test(links[i])) continue;
-                n++;
-                const title = '线路' + n;
-                flags.push(title);
-                eps.push(title + '$' + abs(links[i]));
-            }
-        }
+    // 2026-10-24：站点改版。选集已在 <div class="wn-episodes"> 的 .wn-ep-grid 里，
+    // 每集是 <a href="/vodplay/<id>-1-<n>/" title="第01集">第01集</a>。
+    // 旧的 wn_block_link wn_link_below_player 区块现在是空壳（只剩 <div> 没有链接），
+    // 且旧正则强制要求 <span> 包标题，属性式 title 一律匹配不到 → vod_play_url 恒空。
+    let scope = '';
+    const ep = html.indexOf('wn-episodes');
+    if (ep >= 0) scope = html.slice(ep, ep + 20000);
+    if (!scope) {
+        // 老版式兜底：整页里所有 /vodplay/ 链接都算
+        scope = html;
+    }
+    // 两段式：先抓整个 <a ...>...</a>，再从标签串里单独取 href / title / 文本。
+    // 一行正则里同时用非贪婪匹配多个可选属性，title 永远会落到空捕获组上。
+    const reA = /<a\s+([^>]*\/vodplay\/[^>]*)>([\s\S]{0,300}?)<\/a>/g;
+    let m;
+    let k = 0;
+    const seen = {};
+    while ((m = reA.exec(scope)) !== null) {
+        const attrs = m[1];
+        const link = firstMatch(attrs, /href="(\/vodplay\/[^"]+)"/);
+        if (!link) continue;
+        if (seen[link]) continue;
+        seen[link] = 1;
+        k++;
+        let title = safe(firstMatch(attrs, /title="([^"]*)"/));
+        if (!title) title = safe(m[2] || '');
+        if (!title) title = '第' + k + '集';
+        flags.push(title);
+        eps.push(title + '$' + abs(link));
+        if (k >= 60) break;
     }
 
     // 本站 detail-info 实测恒为空（源码层面就没有输出），元数据改从
