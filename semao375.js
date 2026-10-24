@@ -26,6 +26,30 @@ const TYPES = [
     [130, '无码破解'], [121, '欧美视频']
 ];
 
+// 标签库。站点本身没有标签接口，分类页也没有筛选条（2026-10-24 逐页实测：
+// 首页/分类页/详情页均无筛选区，只有「精品/给力/综合」三个分类组共 22 项）。
+// 唯一真实生效的筛选通道是站内搜索，所以标签筛选走 /vod/search/page/N/wd/<词>.html。
+const TAG_WORDS = '丝袜 强奸 自拍 偷拍 人妻 母女 学生 空姐 护士 老师 熟女 萝莉 巨乳 中出 口交 内射 ' +
+    '无码 中文字幕 探花 酒店 门事件 大学生 眼镜 情侣 洗澡 厕所 车震 迷奸 调教 SM 户外 露出 换脸 网红 ' +
+    '主播 反差 白丝 黑丝 旗袍 制服 旗袍 双飞 孕妇 大奶 肥臀 按摩 会所 缅北 吃瓜 黑料 合集';
+
+let TAG_LIST = null;
+
+function tagList() {
+    if (TAG_LIST) return TAG_LIST;
+    const raw = TAG_WORDS.split(' ');
+    const seen = {};
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+        const w = String(raw[i] || '').trim();
+        if (!w || seen[w]) continue;
+        seen[w] = 1;
+        out.push(w);
+    }
+    TAG_LIST = out;
+    return out;
+}
+
 function init(ext) {
     if (!ext) return;
     let o = ext;
@@ -214,7 +238,9 @@ function parseList(html) {
 
 function parseMaxPage(html) {
     let max = 1;
-    const re = /\/vod\/type\/(?:id\/\d+\/)?page\/(\d+)\.html/g;
+    // 搜索页的分页链接形如 /index.php/vod/search/page/2/wd/xxx.html（带 index.php 前缀和 wd 段），
+    // 分类页是 /vod/type/id/96/page/2.html，所以路径中间不限定，只看 page/N。
+    const re = /\/vod\/(?:type|search)\/[^"'<>]*?page\/(\d+)\/?[^"]*?\.html/g;
     let m;
     while ((m = re.exec(html))) {
         const n = Number(m[1]);
@@ -256,9 +282,23 @@ function parsePlay(html) {
 }
 
 function classList() {
-    return TYPES.map(function (t) {
+    const out = TYPES.map(function (t) {
         return { type_id: String(t[0]), type_name: t[1] };
     });
+    out.push({ type_id: 'tag', type_name: '标签合集' });
+    return out;
+}
+
+// 每个 type_id 都必须挂同一份筛选，漏一个客户端在该分类点筛选就崩（硬规范第 6 条）
+function buildFilters() {
+    const vals = [{ n: '全部', v: '' }];
+    const words = tagList();
+    for (let i = 0; i < words.length; i++) vals.push({ n: words[i], v: words[i] });
+    const one = [{ key: 'tag', name: '标签', value: vals }];
+    const out = {};
+    out['tag'] = one;
+    for (let i = 0; i < TYPES.length; i++) out[String(TYPES[i][0])] = one;
+    return out;
 }
 
 // ---------- 首页 ----------
@@ -269,7 +309,7 @@ function home(filter) {
         const html = fetchText('/index.php/vod/type/id/96.html');
         list = parseList(html);
     } catch (e) { list = []; }
-    const out = { class: classList(), list: list, filters: {} };
+    const out = { class: classList(), list: list, filters: buildFilters() };
     return JSON.stringify(out);
 }
 
@@ -284,9 +324,31 @@ function homeVod() {
 
 function category(tid, pg, filter, extend) {
     const page = Number(pg || 1) || 1;
+    const t = String(tid === undefined || tid === null ? '' : tid).trim();
+
+    // 标签筛选走站内搜索（站点无标签接口，见 TAG_WORDS 上方说明）。
+    // 「标签合集」tab 未选标签时取第一个词，避免空白页。
+    const tag = tagOf(extend, t);
+    if (tag) {
+        const path = page <= 1
+            ? '/index.php/vod/search/wd/' + encodeURIComponent(tag) + '.html'
+            : '/index.php/vod/search/page/' + page + '/wd/' + encodeURIComponent(tag) + '.html';
+        let shtml = '';
+        try { shtml = fetchText(path); } catch (e) { shtml = ''; }
+        const slist = shtml ? parseList(shtml) : [];
+        const spc = shtml ? parseMaxPage(shtml) : 1;
+        return JSON.stringify({
+            page: page,
+            pagecount: spc,
+            limit: slist.length || 24,
+            total: spc * (slist.length || 24),
+            list: slist
+        });
+    }
+
     const path = page <= 1
-        ? '/index.php/vod/type/id/' + tid + '.html'
-        : '/index.php/vod/type/id/' + tid + '/page/' + page + '.html';
+        ? '/index.php/vod/type/id/' + t + '.html'
+        : '/index.php/vod/type/id/' + t + '/page/' + page + '.html';
     let html = '';
     try { html = fetchText(path); } catch (e) { html = ''; }
     const list = html ? parseList(html) : [];
@@ -298,6 +360,16 @@ function category(tid, pg, filter, extend) {
         total: pagecount * (list.length || 24),
         list: list
     });
+}
+
+function tagOf(extend, tid) {
+    let e = extend;
+    if (typeof e === 'string') {
+        try { e = JSON.parse(e); } catch (err) { e = null; }
+    }
+    let w = e && e.tag ? String(e.tag).trim() : '';
+    if (!w && tid === 'tag') w = tagList()[0] || '';
+    return w;
 }
 
 // ---------- 详情 ----------
