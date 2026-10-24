@@ -72,18 +72,22 @@ function bodyOf(r) {
 // 主域失效时按 永久域名 → www → cdn 号 × xyso 号 组合探测。
 // 判据必须看内容特征（中转页也是 200），只看状态码会被骗。
 function idnaSeg(cdn) {
-    // cdn1019-1永久地址xyunso点com卍 -> xn--cdn1019-1xyunsocom-9122aj05ezusckai173b5uwa
-    return 'xn--cdn' + cdn + '-1xyunsocom-9122aj05ezusckai173b5uwa';
+    // cdn1023-2永久地址xyunso点com卍 -> xn--cdn1023-2xyunsocom-9122aj05ezusckai173b5uwa
+    // 2026-10-24 实测：-1- 与 -2- 两种段位都可用，先试 -2-（xy05.cc 跳转页当前指向它）。
+    return 'xn--cdn' + cdn + '-2xyunsocom-9122aj05ezusckai173b5uwa';
 }
 
 function hostList() {
     const out = ['https://xy05.cc', 'https://www.xy05.cc'];
-    const cdns = [1019, 1021, 1020, 1022, 1023];
-    const xys = [25, 26, 27];
+    const cdns = [1023, 1019, 1021, 1020, 1022];
+    const xys = [31, 30, 32];
     for (let i = 0; i < cdns.length; i++) {
         for (let j = 0; j < xys.length; j++) {
+            // 域名段是三位补零（xyso031），不是两位（旧实现拼成 xyso31，全部 000）
             const s = idnaSeg(cdns[i]);
-            out.push('https://' + s + '.xyso' + (xys[j] < 10 ? '0' : '') + xys[j] + '.hair');
+            const n = String(xys[j]);
+            const pad = n.length < 3 ? ('00' + n).slice(-3) : n;
+            out.push('https://' + s + '.xyso' + pad + '.hair');
         }
     }
     return out;
@@ -203,8 +207,10 @@ function classList() {
     return CATS.map(function (c) { return { type_id: c[0], type_name: c[1] }; });
 }
 
+// 筛选必须无条件生成：home(filter) 的入参在部分壳里是 undefined，
+// 旧实现在开头 if (!filter) return {} 会让整个筛选表变空，客户端筛选弹窗直接空。
+// 每个 type_id 都要有键（硬规范第 6 条），无子分类的给空数组。
 function filtersFor(filter) {
-    if (!filter) return {};
     const f = {};
     for (let i = 0; i < CATS.length; i++) {
         const c = CATS[i];
