@@ -381,6 +381,31 @@ function search(key, quick, pg) {
     return JSON.stringify({ list: list, pagecount: parseMaxPage(html) });
 }
 
+// 抓 m3u8，统计内部 KEY/ts 实际 host，把 Referer 设成该域。
+// AV18 等源 m3u8 在 streamfastpro.com，KEY/ts 同域或异域 CDN，播放器只对母链套 Referer
+// → 异域分片被防盗链拒 → 缓冲几百 KB 后归零。动态取真实分片域覆盖 Referer 修复。
+function m3u8Referer(url, hd) {
+    let body = '';
+    try {
+        const res = request(url, { headers: hd });
+        if (res && res.ok !== false) body = String(res.content || '');
+    } catch (e) { body = ''; }
+    if (!body) return hd;
+    const cnt = {};
+    const re = /https?:\/\/([^\/\s"'\\]+)/g;
+    let m;
+    while ((m = re.exec(body)) !== null) {
+        const h = m[1];
+        if (/streamfastpro|m3u8|ts\?|\.ts$|\.js$|\.key$/.test(h)) {
+            cnt[h] = (cnt[h] || 0) + 1;
+        }
+    }
+    let top = '', max = 0;
+    for (const k in cnt) { if (cnt[k] > max) { max = cnt[k]; top = k; } }
+    if (top) hd['Referer'] = 'https://' + top + '/';
+    return hd;
+}
+
 function play(flag, id, vipFlags) {
     // id 形如 "<slug>@<uu>"，uu 已 URI 编码
     let uu = '';
@@ -390,7 +415,8 @@ function play(flag, id, vipFlags) {
     if (!uu) return JSON.stringify({ parse: 0, playUrl: '', url: '', header: hdr });
     // 上游本身就是绝对 m3u8（xingba / lj / new2 / lb 等直挂站源）→ 直接用
     if (/^https?:\/\/.+\.m3u8(\?|$)/i.test(uu)) {
-        return JSON.stringify({ parse: 0, playUrl: '', url: uu, header: hdr });
+        const hd2 = m3u8Referer(uu, JSON.parse(hdr));
+        return JSON.stringify({ parse: 0, playUrl: '', url: uu, header: JSON.stringify(hd2) });
     }
     // 其余（miss 的短 id、17cuk 的相对路径）都要过 /Player/<脚本>.php 换真地址
     let html = '';
@@ -413,7 +439,11 @@ function play(flag, id, vipFlags) {
         // 换不到就原样丢出去，至少 Referer 已带
         return JSON.stringify({ parse: 0, playUrl: '', url: /^https?:/i.test(uu) ? uu : absUrl(uu), header: hdr });
     }
-    return JSON.stringify({ parse: 0, playUrl: '', url: qs[0].u, header: hdr });
+    // 真 m3u8 落点：按内部分片域覆盖 Referer，修异域防盗链断流
+    const finalHd = /^https?:\/\/.+\.m3u8(\?|$)/i.test(qs[0].u)
+        ? JSON.stringify(m3u8Referer(qs[0].u, JSON.parse(hdr)))
+        : hdr;
+    return JSON.stringify({ parse: 0, playUrl: '', url: qs[0].u, header: finalHd });
 }
 
 function isVideo(url) { return /\.m3u8|\.mp4|\.ts(\?|$)/i.test(String(url || '')); }

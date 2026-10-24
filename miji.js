@@ -665,6 +665,32 @@ function followMaster(url, hd) {
     return url.slice(0, cut + 1) + best;
 }
 
+// 抓 m3u8，统计内部 KEY/ts 实际 host，把 Referer 设成该域。
+// 站点常把 m3u8 放母链域、KEY/分片放异域 CDN（如 c10.hs100.top → 98cdn.vip），
+// 播放器只对母链套 Referer → 异域分片被防盗链拒 → 缓冲几百 KB 后归零。
+// 这里动态取真实分片域覆盖 Referer，全链路同源匹配。
+function m3u8Referer(url, hd) {
+    let body = '';
+    try {
+        const res = request(url, { headers: hd });
+        if (res && res.ok !== false) body = String(res.content || '');
+    } catch (e) { body = ''; }
+    if (!body) return hd;
+    const cnt = {};
+    const re = /https?:\/\/([^\/\s"'\\]+)/g;
+    let m;
+    while ((m = re.exec(body)) !== null) {
+        const h = m[1];
+        if (/streamfastpro|hs100|cdn|98cdn|hpvcng|m3u8|ts\?|\.ts$|\.js$/.test(h)) {
+            cnt[h] = (cnt[h] || 0) + 1;
+        }
+    }
+    let top = '', max = 0;
+    for (const k in cnt) { if (cnt[k] > max) { max = cnt[k]; top = k; } }
+    if (top) hd['Referer'] = 'https://' + top + '/';
+    return hd;
+}
+
 function play(flag, id, vipFlags) {
     let s = String(id === undefined || id === null ? '' : id);
     const cut = s.indexOf('$');
@@ -674,11 +700,13 @@ function play(flag, id, vipFlags) {
 
     // 已经是 m3u8 直链
     if (/\.(m3u8|mp4|flv|mkv|ts)(\?|$)/i.test(s)) {
-        const hd0 = { 'User-Agent': UA };
         let u0 = s;
+        const hd0 = { 'User-Agent': UA };
         if (/\.m3u8(\?|$)/i.test(s)) {
             const o0 = s.match(/^(https?:\/\/[^\/]+)/);
             if (o0) hd0['Referer'] = o0[1] + '/';
+            // m3u8 内部 KEY/分片常落异域 CDN，按真实分片域覆盖 Referer
+            hd0['Referer'] = m3u8Referer(s, hd0)['Referer'] || hd0['Referer'];
             const v = followMaster(s, hd0);
             if (v) u0 = v;
         }
@@ -696,6 +724,7 @@ function play(flag, id, vipFlags) {
         if (o) hd['Referer'] = o[1] + '/';
         let url = real;
         if (/\.m3u8(\?|$)/i.test(real)) {
+            hd['Referer'] = m3u8Referer(real, hd)['Referer'] || hd['Referer'];
             const v = followMaster(real, hd);
             if (v) url = v;
         }
