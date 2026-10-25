@@ -192,7 +192,11 @@ function safeName(s) {
 }
 
 function abs(u) {
-    const s = String(u || '');
+    let s = String(u || '');
+    if (!s) return '';
+    // 实体解码：页面里 background-image 常写成 &quot;url&quot;
+    s = s.replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+         .replace(/&amp;/g, '&').replace(/^["'\s]+|["'\s]+$/g, '');
     if (!s) return '';
     if (/^https?:\/\//.test(s)) return s.replace(/\\\//g, '/');
     if (s.indexOf('//') === 0) return 'https:' + s;
@@ -204,7 +208,7 @@ function abs(u) {
 const ITEM_RE = /<li class="content-item[^"]*">([\s\S]*?)<\/li>/g;
 const ITEM_ID_RE = /\/vod\/detail\/id\/(\d+)\.html/;
 const ITEM_TITLE_RE = /<h5[^>]*class="[^"]*video-title[^"]*"[^>]*>([\s\S]*?)<\/h5>/;
-const ITEM_PIC_RE = /background-image:\s*url\(\s*['"]?([^'")]+)['"]?\s*\)/;
+const ITEM_PIC_RE = /background-image:\s*url\(\s*["']?((?:&quot;)?[^"'()\s]+)[^)]*\)/;
 const ITEM_NOTE_RE = /<span class="[^"]*note[^"]*"[^>]*>([\s\S]*?)<\/span>/;
 
 function parseList(html) {
