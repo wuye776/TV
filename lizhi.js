@@ -318,7 +318,7 @@ function detail(id) {
     for (let i = 0; i < eps.length; i++) {
         const no = Number(eps[i].epNo || eps[i].episodeNumber || (i + 1)) || (i + 1);
         names.push('第' + no + '集');
-        urls.push(did + '|' + no);
+        urls.push(did + '-' + no);
     }
     if (!names.length) { names.push('第1集'); urls.push(did + '|1'); }
 
@@ -382,7 +382,7 @@ function play(flag, id, flags) {
         parse: 0,
         jx: 0,
         url: url,
-        header: { 'User-Agent': UA, 'Referer': HOST + '/' }
+        header: JSON.stringify({ 'User-Agent': UA, 'Referer': HOST + '/' })
     });
 }
 
