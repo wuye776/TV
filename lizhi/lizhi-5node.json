@@ -1,0 +1,76 @@
+{
+  "spider": "",
+  "logo": "",
+  "sites": [
+    {
+      "key": "lizhi0",
+      "name": "荔枝短剧·1快",
+      "type": 3,
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@7e50913582fca5eb13d3144a3537cc3450237dce/lizhi.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": "",
+      "jar": "",
+      "playerType": "",
+      "timeout": 60
+    },
+    {
+      "key": "lizhi1",
+      "name": "荔枝短剧·2快",
+      "type": 3,
+      "api": "https://gcore.jsdelivr.net/gh/wuye776/TV@7e50913582fca5eb13d3144a3537cc3450237dce/lizhi.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": "",
+      "jar": "",
+      "playerType": "",
+      "timeout": 60
+    },
+    {
+      "key": "lizhi2",
+      "name": "荔枝短剧·3快",
+      "type": 3,
+      "api": "https://testingcf.jsdelivr.net/gh/wuye776/TV@7e50913582fca5eb13d3144a3537cc3450237dce/lizhi.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": "",
+      "jar": "",
+      "playerType": "",
+      "timeout": 60
+    },
+    {
+      "key": "lizhi3",
+      "name": "荔枝短剧·4快",
+      "type": 3,
+      "api": "https://quantil.jsdelivr.net/gh/wuye776/TV@7e50913582fca5eb13d3144a3537cc3450237dce/lizhi.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": "",
+      "jar": "",
+      "playerType": "",
+      "timeout": 60
+    },
+    {
+      "key": "lizhi4",
+      "name": "荔枝短剧·5代",
+      "type": 3,
+      "api": "https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/7e50913582fca5eb13d3144a3537cc3450237dce/lizhi.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": "",
+      "jar": "",
+      "playerType": "",
+      "timeout": 60
+    }
+  ],
+  "lives": [],
+  "parses": [],
+  "flags": [],
+  "wallpaper": "",
+  "warning": ""
+}
