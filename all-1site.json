@@ -37,7 +37,7 @@
       "key": "itstar1",
       "name": "本色·1快",
       "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@e1e8de50f604e979d39d4081f147a772bd6dc47c/itstar.js",
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
