@@ -263,7 +263,13 @@ function totalOf(j) {
 
 // ---------- 映射 ----------
 
+// 封面：站方 OSS 强制下载（x-oss-force-download: true）+ 正文是 base64（/9j/…），
+// 站方自己网页都走 fetch→base64 渲染，spider 无解 → 留空，显示默认占位图。
+// 判定依据见 记忆-封面无解四站判定.md / 技能 附录 M。开关留着自己试。
+const PIC_MODE = 'none'; // 'none' = 留空（默认） | 'direct' = 拼 PIC 前缀硬试
+
 function fixPic(p) {
+    if (PIC_MODE === 'none') return '';
     let u = s(p).replace(/\\\//g, '/').trim();
     if (!u) return '';
     if (/^https?:\/\//.test(u)) return u;
