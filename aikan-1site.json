@@ -6,73 +6,10 @@
       "key": "aikan",
       "name": "爱看视频·1快",
       "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@be4f440ca3dfb793fe5f1650c6123f8d3c3b3614/aikan.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
-      "timeout": 60
-    },
-    {
-      "key": "4do1",
-      "name": "4do·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ef37165285a1f96fb9d037465c2cfcb5eae0cb64/4do.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60
-    },
-    {
-      "key": "xyunso1",
-      "name": "Xyunso·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@e20bec0cbf2fc2c2d63ae59efd527f1b83c2a353/xyunso.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60,
-      "ext": "{\"base\":\"https://xy05.cc\"}"
-    },
-    {
-      "key": "scg1",
-      "name": "SCG·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60
-    },
-    {
-      "key": "itstar1",
-      "name": "本色·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@e1e8de50f604e979d39d4081f147a772bd6dc47c/itstar.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60,
-      "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
-    },
-    {
-      "key": "hg21",
-      "name": "真黄果·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@7aea313208c469b1d1cadda9eb81570afe4655ca/hg2.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60
-    },
-    {
-      "key": "miji1",
-      "name": "秘密·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@e20bec0cbf2fc2c2d63ae59efd527f1b83c2a353/miji.js",
-      "searchable": 1,
-      "quickSearch": 0,
-      "filterable": 1,
-      "ext": "{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}",
       "timeout": 60
     }
   ]
