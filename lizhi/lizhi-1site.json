@@ -1,1 +1,24 @@
-{"spider":"","logo":"","sites":[{"key":"lizhi","name":"荔枝短剧","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@0d9cbdd70f013a70c57a762c4214b2cee61737ff/lizhi.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60}],"lives":[],"parses":[],"flags":[]}
+{
+  "spider": "",
+  "logo": "",
+  "sites": [
+    {
+      "key": "lizhi",
+      "name": "荔枝短剧",
+      "type": 3,
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@7c7f4fce29bc6d1335305f54a280426cab326976",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "ext": "",
+      "jar": "",
+      "playerType": "",
+      "timeout": 60
+    }
+  ],
+  "lives": [],
+  "parses": [],
+  "flags": [],
+  "wallpaper": "",
+  "warning": ""
+}
