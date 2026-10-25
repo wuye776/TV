@@ -194,7 +194,7 @@ function mergeDetails(list) {
     for (var j = 0; j < list.length; j++) {
         var v = map[list[j].vod_id];
         if (v) {
-            list[j].vod_pic = v.vod_pic || '';
+            list[j].vod_pic = picWrap(v.vod_pic || '', v.vod_name);
             list[j].vod_remarks = dateOnly(v.vod_time);
             if (v.vod_class) list[j].vod_class = v.vod_class;
         }
@@ -212,11 +212,53 @@ function itemsOf(list) {
             vod_name: v.vod_name || '',
             type_id: String(v.type_id || ''),
             type_name: v.type_name || '',
-            vod_pic: v.vod_pic || '',
+            vod_pic: picWrap(v.vod_pic || '', v.vod_name),
             vod_remarks: v.vod_remarks || dateOnly(v.vod_time)
         });
     }
     return out;
+}
+
+var IMGCDN = 'https://imgcdn.u8-jj1dth16b1n1aay.xyz';
+var B64A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+var B64U = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+// utf8 → urlsafe b64（无 pad）——QuickJS 无 Buffer/atob 时的封面包装编码
+function b64enc(str) {
+    var s = String(str), out = '', i, c1, c2, c3, e1, e2, e3, e4;
+    var bytes = [];
+    for (i = 0; i < s.length; i++) {
+        var cc = s.charCodeAt(i);
+        if (cc < 0x80) bytes.push(cc);
+        else if (cc < 0x800) { bytes.push(0xC0 | (cc >> 6), 0x80 | (cc & 63)); }
+        else if (cc >= 0xD800 && cc <= 0xDBFF && i + 1 < s.length) {
+            var lo = s.charCodeAt(i + 1);
+            if (lo >= 0xDC00 && lo <= 0xDFFF) {
+                var u = 0x10000 + ((cc - 0xD800) << 10) + (lo - 0xDC00);
+                bytes.push(0xF0 | (u >> 18), 0x80 | ((u >> 12) & 63), 0x80 | ((u >> 6) & 63), 0x80 | (u & 63));
+                i++;
+            } else bytes.push(0xEF, 0xBF, 0xBD);
+        } else bytes.push(0xE0 | (cc >> 12), 0x80 | ((cc >> 6) & 63), 0x80 | (cc & 63));
+    }
+    for (i = 0; i < bytes.length; i += 3) {
+        c1 = bytes[i]; c2 = bytes[i + 1]; c3 = bytes[i + 2];
+        e1 = c1 >> 2;
+        e2 = ((c1 & 3) << 4) | ((c2 === undefined ? 0 : c2) >> 4);
+        e3 = c2 === undefined ? -1 : ((c2 & 15) << 2) | ((c3 === undefined ? 0 : c3) >> 6);
+        e4 = c3 === undefined ? -1 : c3 & 63;
+        out += B64U.charAt(e1) + B64U.charAt(e2);
+        out += e3 < 0 ? '' : B64U.charAt(e3);
+        out += e4 < 0 ? '' : B64U.charAt(e4);
+    }
+    return out;
+}
+
+// aaa 裸 .txt 封面（text/plain + 电视端不可达风险）→ 换站方出图域包装（返回 JPEG 字节）
+function picWrap(pic, name) {
+    var p = String(pic || '');
+    if (p.indexOf('/text/') < 0 && p.indexOf('.txt') < 0) return p;
+    if (p.indexOf('imgcdn.') >= 0) return p;
+    return IMGCDN + '/i/txt/' + b64enc(p) + '/' + b64enc(String(name || '视频')) + '.txt';
 }
 
 function emptyPage(page) {
@@ -367,7 +409,7 @@ export default {
             if (d && d.list && d.list.length) {
                 var v = d.list[0];
                 vod.vod_name = v.vod_name || vod.vod_name;
-                vod.vod_pic = v.vod_pic || vod.vod_pic;
+                vod.vod_pic = picWrap(v.vod_pic || vod.vod_pic, vod.vod_name);
                 vod.vod_remarks = dateOnly(v.vod_time) || vod.vod_remarks;
                 vod.type_name = v.type_name || vod.type_name;
                 vod.vod_play_url = v.vod_play_url || '';
@@ -387,6 +429,7 @@ export default {
             }
             vod.vod_play_url = parts.join('#');
         }
+        if (!vod.vod_play_from) vod.vod_play_from = '爱看在线';
         return JSON.stringify({ list: [vod] });
     },
     play(flag, id) {
