@@ -360,6 +360,24 @@ function play(flag, id, flags) {
     if (!url) return JSON.stringify({ parse: 0, jx: 0, url: '' });
     if (url.charAt(0) === '/') url = HOST + url;
     url = String(url).replace(/&amp;/g, '&');
+
+    // 预热全链：manifest 首拉可能 500（CDN 按需回源），重试到 200 再交给播放器；
+    // 顺带 KEY + 首分片 Range 预热（真黄果 v7 先例）
+    let ok = false;
+    for (let i = 0; i < 3; i++) {
+        const m = req(url);
+        if (m && m.indexOf('#EXTM3U') >= 0) {
+            ok = true;
+            const ku = (m.match(/URI="([^"]+)"/) || [])[1];
+            if (ku) req(String(ku).replace(/&amp;/g, '&'));
+            const seg = (m.split('\n').filter(function (l) { return l && l.charAt(0) !== '#'; })[0]) || '';
+            if (seg.indexOf('http') === 0) req(seg.replace(/&amp;/g, '&'), { headers: { 'Range': 'bytes=0-65535' } });
+            break;
+        }
+        wait(300);
+    }
+    if (!ok) return JSON.stringify({ parse: 0, jx: 0, url: 'https://liz03.com/#取流失败-请稍后重试-' + Date.now() });
+
     return JSON.stringify({
         parse: 0,
         jx: 0,
