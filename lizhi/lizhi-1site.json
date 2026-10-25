@@ -1,1 +1,1 @@
-{"spider":"","logo":"","sites":[{"key":"lizhi","name":"荔枝短剧","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@ae0c387495c261d312ca13714ab63d3339bbb85e/lizhi.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60}],"lives":[],"parses":[],"flags":[]}
+{"spider":"","logo":"","sites":[{"key":"lizhi","name":"荔枝短剧","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@6d22cbc72a03b483edc679bf542abbf460f0e423/lizhi.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60}],"lives":[],"parses":[],"flags":[]}
