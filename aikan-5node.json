@@ -1,9 +1,9 @@
 {
   "spider": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
-  "logo": "https://imgcdn.u8-jj1dth16b1n1aay.xyz/pic/00d5ee517382d6f81c18e4413c27d645.jpg",
+  "logo": "",
   "sites": [
     {
-      "key": "aikan-1",
+      "key": "aikan",
       "name": "爱看视频·1快",
       "type": 3,
       "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@be4f440ca3dfb793fe5f1650c6123f8d3c3b3614/aikan.js",
@@ -13,7 +13,7 @@
       "timeout": 60
     },
     {
-      "key": "aikan-2",
+      "key": "aikan",
       "name": "爱看视频·2核",
       "type": 3,
       "api": "https://gcore.jsdelivr.net/gh/wuye776/TV@be4f440ca3dfb793fe5f1650c6123f8d3c3b3614/aikan.js",
@@ -23,7 +23,7 @@
       "timeout": 60
     },
     {
-      "key": "aikan-3",
+      "key": "aikan",
       "name": "爱看视频·3cf",
       "type": 3,
       "api": "https://testingcf.jsdelivr.net/gh/wuye776/TV@be4f440ca3dfb793fe5f1650c6123f8d3c3b3614/aikan.js",
@@ -33,7 +33,7 @@
       "timeout": 60
     },
     {
-      "key": "aikan-4",
+      "key": "aikan",
       "name": "爱看视频·4量",
       "type": 3,
       "api": "https://quantil.jsdelivr.net/gh/wuye776/TV@be4f440ca3dfb793fe5f1650c6123f8d3c3b3614/aikan.js",
@@ -43,7 +43,7 @@
       "timeout": 60
     },
     {
-      "key": "aikan-5",
+      "key": "aikan",
       "name": "爱看视频·5代",
       "type": 3,
       "api": "https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/be4f440ca3dfb793fe5f1650c6123f8d3c3b3614/aikan.js",
@@ -52,5 +52,9 @@
       "filterable": 1,
       "timeout": 60
     }
-  ]
+  ],
+  "lives": [],
+  "parses": [],
+  "flags": [],
+  "ads": []
 }

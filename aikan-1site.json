@@ -1,6 +1,6 @@
 {
   "spider": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
-  "logo": "https://imgcdn.u8-jj1dth16b1n1aay.xyz/pic/00d5ee517382d6f81c18e4413c27d645.jpg",
+  "logo": "",
   "sites": [
     {
       "key": "aikan",
@@ -12,5 +12,9 @@
       "filterable": 1,
       "timeout": 60
     }
-  ]
+  ],
+  "lives": [],
+  "parses": [],
+  "flags": [],
+  "ads": []
 }

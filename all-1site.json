@@ -1,12 +1,12 @@
 {
   "spider": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
-  "logo": "https://imgcdn.u8-jj1dth16b1n1aay.xyz/pic/00d5ee517382d6f81c18e4413c27d645.jpg",
+  "logo": "https://fastly.jsdelivr.net/gh/wuye776/TV@main/aikan-logo.png",
   "sites": [
     {
-      "key": "aikan",
+      "key": "aikan1",
       "name": "爱看视频·1快",
       "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@be4f440ca3dfb793fe5f1650c6123f8d3c3b3614/aikan.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
@@ -44,7 +44,7 @@
       "timeout": 60
     },
     {
-      "key": "itstar1",
+      "key": "bense1",
       "name": "本色·1快",
       "type": 3,
       "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@e1e8de50f604e979d39d4081f147a772bd6dc47c/itstar.js",
@@ -55,7 +55,7 @@
       "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
     },
     {
-      "key": "hg21",
+      "key": "zhenhg1",
       "name": "真黄果·1快",
       "type": 3,
       "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@7aea313208c469b1d1cadda9eb81570afe4655ca/hg2.js",
