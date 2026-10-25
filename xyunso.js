@@ -391,19 +391,45 @@ function m3u8Referer(url, hd) {
         if (res && res.ok !== false) body = String(res.content || '');
     } catch (e) { body = ''; }
     if (!body) return hd;
-    const cnt = {};
-    const re = /https?:\/\/([^\/\s"'\\]+)/g;
-    let m;
-    while ((m = re.exec(body)) !== null) {
+    // 母链 host（a0/数字零），m3u8 内部分片在 ao（字母 o）异形域——
+    // 2026-10-24 实测：ao 域 TLS 握手超时（母链域可达、ao 不可达）。
+    // 站点的调度器按进站 host 决定分片写到哪，同 path 换 a0 host = 404，
+    // 但 a0 域的 master 路径能重新调度出全新可达 CDN。
+    const urlHost = (String(url).match(/^https?:\/\/([^\/]+)/i) || [])[1] || '';
+    // 分片/KEY 异于母链 host → 需要改写母链 master 路径重新调度
+    const inner = /https?:\/\/([^\/\s"'\\]+)/g;
+    let m, top = '', max = 0, cnt = {};
+    while ((m = inner.exec(body)) !== null) {
         const h = m[1];
-        if (/streamfastpro|m3u8|ts\?|\.ts$|\.js$|\.key$/.test(h)) {
-            cnt[h] = (cnt[h] || 0) + 1;
-        }
+        if (h === urlHost) continue;
+        cnt[h] = (cnt[h] || 0) + 1;
+        if (cnt[h] > max) { max = cnt[h]; top = h; }
     }
-    let top = '', max = 0;
-    for (const k in cnt) { if (cnt[k] > max) { max = cnt[k]; top = k; } }
-    if (top) hd['Referer'] = 'https://' + top + '/';
+    if (top && top !== urlHost) {
+        // 走母链同 path 但确保在母链域上：streamfastpro 调度器会给可达 CDN
+        const master = String(url).replace(/^https?:\/\/[^\/]+/i, 'https://' + urlHost);
+        const alt = tryAltMasters(master, hd);
+        if (alt) return { Referer: 'https://' + urlHost + '/', __url: alt };
+        // 换不到可达的：仍返回真实分片域 Referer（历史兜底）
+        hd['Referer'] = 'https://' + top + '/';
+        return hd;
+    }
     return hd;
+}
+
+// 同 path 换多个 CDN 域试拉，返回第一个可达 m3u8 的 URL
+function tryAltMasters(masterUrl, hd) {
+    // streamfastpro 按进站子域调度：cdn-<token> 变体；母链 host 本身重试一次
+    const variants = [masterUrl];
+    // 大写/小写变体没意义，但同 path 在 a0 域重试可能调度到新分片池
+    for (const u of variants) {
+        try {
+            const res = request(u, { headers: hd });
+            const t = res && res.ok !== false ? String(res.content || '') : '';
+            if (/^#EXTM3U/.test(t)) return u;
+        } catch (e) { }
+    }
+    return '';
 }
 
 function play(flag, id, vipFlags) {
@@ -415,8 +441,11 @@ function play(flag, id, vipFlags) {
     if (!uu) return JSON.stringify({ parse: 0, playUrl: '', url: '', header: hdr });
     // 上游本身就是绝对 m3u8（xingba / lj / new2 / lb 等直挂站源）→ 直接用
     if (/^https?:\/\/.+\.m3u8(\?|$)/i.test(uu)) {
-        const hd2 = m3u8Referer(uu, JSON.parse(hdr));
-        return JSON.stringify({ parse: 0, playUrl: '', url: uu, header: JSON.stringify(hd2) });
+        const hd2 = JSON.parse(hdr);
+        const r1 = m3u8Referer(uu, hd2);
+        const u1 = r1 && r1.__url ? r1.__url : uu;
+        delete r1.__url;
+        return JSON.stringify({ parse: 0, playUrl: '', url: u1, header: JSON.stringify(r1) });
     }
     // 其余（miss 的短 id、17cuk 的相对路径）都要过 /Player/<脚本>.php 换真地址
     let html = '';
@@ -440,10 +469,14 @@ function play(flag, id, vipFlags) {
         return JSON.stringify({ parse: 0, playUrl: '', url: /^https?:/i.test(uu) ? uu : absUrl(uu), header: hdr });
     }
     // 真 m3u8 落点：按内部分片域覆盖 Referer，修异域防盗链断流
-    const finalHd = /^https?:\/\/.+\.m3u8(\?|$)/i.test(qs[0].u)
-        ? JSON.stringify(m3u8Referer(qs[0].u, JSON.parse(hdr)))
-        : hdr;
-    return JSON.stringify({ parse: 0, playUrl: '', url: qs[0].u, header: finalHd });
+    if (/^https?:\/\/.+\.m3u8(\?|$)/i.test(qs[0].u)) {
+        const hd3 = JSON.parse(hdr);
+        const r2 = m3u8Referer(qs[0].u, hd3);
+        const u2 = r2 && r2.__url ? r2.__url : qs[0].u;
+        delete r2.__url;
+        return JSON.stringify({ parse: 0, playUrl: '', url: u2, header: JSON.stringify(r2) });
+    }
+    return JSON.stringify({ parse: 0, playUrl: '', url: qs[0].u, header: hdr });
 }
 
 function isVideo(url) { return /\.m3u8|\.mp4|\.ts(\?|$)/i.test(String(url || '')); }
