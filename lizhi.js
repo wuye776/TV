@@ -344,6 +344,33 @@ function detail(id) {
 
 const EP_CACHE = {}; // did-no -> playbackUrl，进程级缓存：同集二次播放零请求
 
+// master.m3u8 带多码率变体时，壳子对变体跳转的容错很差；直接解析成变体直链交出去（miji followMaster 同法）
+function followMaster(m, base) {
+    if (!m || m.indexOf('#EXT-X-STREAM-INF') < 0) return '';
+    const lines = m.split('\n');
+    let best = '', bestBw = -1;
+    for (let i = 0; i < lines.length; i++) {
+        const L = lines[i];
+        if (L.indexOf('#EXT-X-STREAM-INF') !== 0) continue;
+        const bw = Number((L.match(/BANDWIDTH=(\d+)/) || [])[1] || 0);
+        let nx = '';
+        for (let j = i + 1; j < lines.length; j++) {
+            const c = lines[j].replace(/^\s+|\s+$/g, '');
+            if (c && c.charAt(0) !== '#') { nx = c; break; }
+        }
+        if (!nx) continue;
+        // 优先 480p 档（约 1.38Mbps），没有就取带宽中位——别贪最高码率，电视端 3 倍速差
+        if (/480p/i.test(L) && !best) { best = nx; bestBw = bw; break; }
+        if (bw > bestBw && bw <= 2000000) { bestBw = bw; best = nx; }
+    }
+    if (!best) return '';
+    if (best.charAt(0) === '/') {
+        const o = String(base || HOST).match(/^https?:\/\/[^\/]+/);
+        best = (o ? o[0] : HOST) + best;
+    }
+    return best;
+}
+
 function play(flag, id, flags) {
     let raw = String(id === undefined || id === null ? '' : id);
     const cut = raw.indexOf('$');
@@ -373,11 +400,25 @@ function play(flag, id, flags) {
         EP_CACHE[ck] = url;
     }
 
+    // 只对 master 拉一次（带 3 次重试）：变体直链直接交出去，省掉壳子一跳
+    let finalUrl = url;
+    if (url.indexOf('manifest.m3u8') >= 0) {
+        for (let i = 0; i < 3; i++) {
+            const m = req(url);
+            if (m && m.indexOf('#EXTM3U') >= 0) {
+                const v = followMaster(m, url);
+                if (v) finalUrl = v;
+                break;
+            }
+            wait(250);
+        }
+    }
+
     return JSON.stringify({
         parse: 0,
         playUrl: '',
         jx: 0,
-        url: url,
+        url: finalUrl,
         header: JSON.stringify({ 'User-Agent': UA, 'Referer': HOST + '/' })
     });
 }
