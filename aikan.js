@@ -253,12 +253,17 @@ function b64enc(str) {
     return out;
 }
 
-// aaa 裸 .txt 封面（text/plain + 电视端不可达风险）→ 换站方出图域包装（返回 JPEG 字节）
+// aaa 裸 .txt 封面（text/plain + 电视端不渲染）→ 代理换血出正经 image/jpeg
+// PIC_MODE: 'wp'=i0.wp.com（电视可达实证:xyunso）| 'wsrv'=wsrv.nl（按字节解码,可达性未知）| 'none'=留空占位 | 'raw'=站方imgcdn包装(.txt 电视实测不出,仅备用)
+var PIC_MODE = 'wp';
 function picWrap(pic, name) {
+    if (PIC_MODE === 'none') return '';
     var p = String(pic || '');
-    if (p.indexOf('/text/') < 0 && p.indexOf('.txt') < 0) return p;
-    if (p.indexOf('imgcdn.') >= 0) return p;
-    return IMGCDN + '/i/txt/' + b64enc(p) + '/' + b64enc(String(name || '视频')) + '.txt';
+    if (!p) return '';
+    if (p.indexOf('i0.wp.com/') >= 0 || p.indexOf('wsrv.nl/') >= 0 || p.indexOf('/i/txt/') >= 0) return p;
+    if (PIC_MODE === 'wsrv') return 'https://wsrv.nl/?url=' + encodeURIComponent(p) + '&output=jpg&w=300';
+    if (PIC_MODE === 'wp') return 'https://i0.wp.com/' + p.replace(/^https?:\/\//, '') + '?strip=all';
+    return IMGCDN + '/i/txt/' + b64enc(p) + '/' + b64enc(String(name || '爱看视频')) + '.txt';
 }
 
 function emptyPage(page) {
