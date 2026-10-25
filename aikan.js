@@ -194,7 +194,7 @@ function mergeDetails(list) {
     for (var j = 0; j < list.length; j++) {
         var v = map[list[j].vod_id];
         if (v) {
-            list[j].vod_pic = picWrap(v.vod_pic || '', v.vod_name);
+            list[j].vod_pic = picWrap(v.vod_pic || '');
             list[j].vod_remarks = dateOnly(v.vod_time);
             if (v.vod_class) list[j].vod_class = v.vod_class;
         }
@@ -212,7 +212,7 @@ function itemsOf(list) {
             vod_name: v.vod_name || '',
             type_id: String(v.type_id || ''),
             type_name: v.type_name || '',
-            vod_pic: picWrap(v.vod_pic || '', v.vod_name),
+            vod_pic: picWrap(v.vod_pic || ''),
             vod_remarks: v.vod_remarks || dateOnly(v.vod_time)
         });
     }
@@ -253,17 +253,24 @@ function b64enc(str) {
     return out;
 }
 
-// aaa 裸 .txt 封面（text/plain + 电视端不渲染）→ 代理换血出正经 image/jpeg
-// PIC_MODE: 'wp'=i0.wp.com（电视可达实证:xyunso）| 'wsrv'=wsrv.nl（按字节解码,可达性未知）| 'none'=留空占位 | 'raw'=站方imgcdn包装(.txt 电视实测不出,仅备用)
-var PIC_MODE = 'wp';
-function picWrap(pic, name) {
-    if (PIC_MODE === 'none') return '';
+// 站方封面两种形态：
+//   ① aaa.img-xxx.xyz/text/<md5>.txt —— base64(JPEG) 伪装 .txt，CT=text/plain，电视不渲染
+//   ② imgcdn.u8-xxx.xyz/pic/<md5>.jpg  —— 同一张图的正经 JPEG，CT=image/jpeg，电视可达✅
+// 修法：正则抽 <md5> → 换 imgcdn /pic/<md5>.jpg（实测 4/4 200、magic FFD8FF、CF 缓存 HIT）
+var PICC = 'https://imgcdn.u8-jj1dth16b1n1aay.xyz';
+var PIC_MODE = 'direct';   // 'direct'=imgcdn/pic 真JPEG | 'wp' | 'wsrv' | 'none'
+function picWrap(pic) {
     var p = String(pic || '');
     if (!p) return '';
-    if (p.indexOf('i0.wp.com/') >= 0 || p.indexOf('wsrv.nl/') >= 0 || p.indexOf('/i/txt/') >= 0) return p;
-    if (PIC_MODE === 'wsrv') return 'https://wsrv.nl/?url=' + encodeURIComponent(p) + '&output=jpg&w=300';
+    if (PIC_MODE === 'none') return '';
+    // 已经是正经图域，幂等直返
+    if (p.indexOf(PICC + '/pic/') === 0) return p;
     if (PIC_MODE === 'wp') return 'https://i0.wp.com/' + p.replace(/^https?:\/\//, '') + '?strip=all';
-    return IMGCDN + '/i/txt/' + b64enc(p) + '/' + b64enc(String(name || '爱看视频')) + '.txt';
+    if (PIC_MODE === 'wsrv') return 'https://wsrv.nl/?url=' + encodeURIComponent(p) + '&output=jpg&w=300';
+    // direct：抽 md5 换装
+    var md5 = p.match(/([0-9a-f]{32})(?:\.txt)?$/i) || p.match(/([0-9a-f]{32})/i);
+    if (!md5) return p;
+    return PICC + '/pic/' + md5[1].toLowerCase() + '.jpg';
 }
 
 function emptyPage(page) {
@@ -414,7 +421,7 @@ export default {
             if (d && d.list && d.list.length) {
                 var v = d.list[0];
                 vod.vod_name = v.vod_name || vod.vod_name;
-                vod.vod_pic = picWrap(v.vod_pic || vod.vod_pic, vod.vod_name);
+                vod.vod_pic = picWrap(v.vod_pic || vod.vod_pic);
                 vod.vod_remarks = dateOnly(v.vod_time) || vod.vod_remarks;
                 vod.type_name = v.type_name || vod.type_name;
                 vod.vod_play_url = v.vod_play_url || '';
