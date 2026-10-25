@@ -1,5 +1,3 @@
-import { _http } from 'assets://js/lib/cat.js';
-
 /*
  * 荔枝短剧 liz03.com —— 影视仓 spider (type:3 / .js)
  * 站方：Nuxt3 SPA + JSON API (/api/v1)
@@ -77,21 +75,40 @@ const FILTERS = {
     }
 };
 
-// ---------------- 底层请求 ----------------
+// ---------------- 底层请求（自适应影视仓/猫影视/其他壳子） ----------------
+
+function request(url, opt) {
+    var o = Object.assign({ async: false, method: 'GET' }, opt || {});
+    o.async = false;
+    if (typeof http === 'function') return http(url, o);
+    if (typeof req === 'function') return req(url, o);
+    if (typeof net !== 'undefined' && net && typeof net.http === 'function') return net.http(url, o);
+    throw new Error('no http binding');
+}
 
 function req(url) {
     try {
-        const r = _http(url, {
+        const r = request(url, {
             method: 'GET',
             headers: {
                 'User-Agent': UA,
                 'Accept': 'application/json, text/plain, */*',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Origin': HOST,
                 'Referer': HOST + '/'
             }
         });
-        if (!r || !r.content) return null;
-        return String(r.content);
+        if (r === null || r === undefined) return null;
+        if (typeof r === 'string') return r;
+        if (typeof r === 'object') {
+            if (typeof r.content === 'string') return r.content;
+            if (typeof r.body === 'string') return r.body;
+            if (typeof r.data === 'string') return r.data;
+            if (typeof r.text === 'string') return r.text;
+            if (typeof r === 'string') return r;
+            try { return JSON.stringify(r); } catch (e) { return null; }
+        }
+        return null;
     } catch (e) {
         return null;
     }
