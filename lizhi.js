@@ -316,20 +316,20 @@ function detail(id) {
         for (let i = 1; i <= n; i++) eps.push({ epNo: i });
     }
 
-    const names = [], urls = [];
+    const eps2 = [];
     for (let i = 0; i < eps.length; i++) {
         const no = Number(eps[i].epNo || eps[i].episodeNumber || (i + 1)) || (i + 1);
-        names.push('第' + no + '集');
-        urls.push(did + '-' + no);
+        eps2.push('第' + no + '集$' + did + '-' + no);
     }
-    if (!names.length) { names.push('第1集'); urls.push(did + '|1'); }
+    if (!eps2.length) eps2.push('第1集$' + did + '-1');
 
     const v = vod(d) || { vod_id: did, vod_name: '' };
     v.vod_id = did;
     const cur = Number(d.publishedEpisodeCount || 0) || eps.length;
     v.vod_remarks = (d.partial ? '更新至' + cur + '集' : '全' + (Number(d.totalEpisodes || 0) || eps.length) + '集');
     v.vod_play_from = 'lizhi';
-    v.vod_play_url = names.join('#') + '$$$' + urls.join('#');
+    // 单线路：分集结构必须是 集名$id 成对串（$$$ 是线路分隔符，不是名称/地址分栏）
+    v.vod_play_url = eps2.join('#');
 
     if (d.related && d.related.length) {
         const rel = [];
@@ -345,7 +345,10 @@ function detail(id) {
 const EP_CACHE = {}; // did-no -> playbackUrl，进程级缓存：同集二次播放零请求
 
 function play(flag, id, flags) {
-    let raw = String(id || '');
+    let raw = String(id === undefined || id === null ? '' : id);
+    const cut = raw.indexOf('$');
+    if (cut >= 0) raw = raw.slice(cut + 1); // 壳子可能传 集名$id 整串（miji 先例），取末段
+    raw = raw.trim();
     try { raw = decodeURIComponent(raw); } catch (e) { }
     let did = '', no = 1;
     const p = raw.split('|');
@@ -372,6 +375,7 @@ function play(flag, id, flags) {
 
     return JSON.stringify({
         parse: 0,
+        playUrl: '',
         jx: 0,
         url: url,
         header: JSON.stringify({ 'User-Agent': UA, 'Referer': HOST + '/' })
