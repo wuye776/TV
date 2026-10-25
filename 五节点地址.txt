@@ -4,7 +4,7 @@
   门域：mm.9999999993.cc（301 → http://289xx.cc 站本体，spider 已内置门域自愈）
   站体：289xx.cc（"爱看视频 FilmBox"，MacCMS v10 JSON API 直连）
   远端仓库：wuye776/TV
-  spider js commit（aikan v1 键）：f601dde65b9ae46d653e20f19b9ccba25c960529
+  spider js commit（aikan v1 键）：be4f440ca3dfb793fe5f1650c6123f8d3c3b3614
   订阅 json commit：五节点=1b017727 / 单站=1b017727（同一 commit 内钉 aikan.js @3168505）
 
 ────────────────────────────────────────────────
