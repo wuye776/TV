@@ -120,15 +120,17 @@ function wait(ms) {
 }
 
 function json(url) {
-    // 站方 1 秒内多请求回 500「请求过于频繁」，退避重试
-    for (let attempt = 0; attempt < 4; attempt++) {
+    // 站方 1 秒内多请求回 500「请求过于频繁」，罚期可能跨秒——退避爬梯铺到 ~7 秒
+    const back = [0, 400, 1000, 2000, 3500];
+    for (let attempt = 0; attempt < back.length; attempt++) {
+        if (back[attempt]) wait(back[attempt]);
         const t = req(url);
-        if (!t) { wait(200); continue; }
+        if (!t) continue;
         let j = null;
         try { j = JSON.parse(t); } catch (e) { j = null; }
-        if (!j) { wait(200); continue; }
+        if (!j) continue;
         if (j.success === false) {
-            if (String(j.message || '').indexOf('频繁') >= 0) { wait(260); continue; }
+            if (String(j.message || '').indexOf('频繁') >= 0) continue;
             return null;
         }
         return j.data !== undefined ? j.data : j;
@@ -340,6 +342,8 @@ function detail(id) {
     return JSON.stringify({ list: [v] });
 }
 
+const EP_CACHE = {}; // did-no -> playbackUrl，进程级缓存：同集二次播放零请求
+
 function play(flag, id, flags) {
     let raw = String(id || '');
     try { raw = decodeURIComponent(raw); } catch (e) { }
@@ -355,28 +359,16 @@ function play(flag, id, flags) {
     }
     if (!did) return JSON.stringify({ parse: 0, jx: 0, url: '' });
 
-    const d = json(HOST + '/api/v1/drama/' + did + '/ep/' + no);
-    let url = (d && (d.playbackUrl || d.videoUrl || d.manifestUrl)) || '';
-    if (!url) return JSON.stringify({ parse: 0, jx: 0, url: '' });
-    if (url.charAt(0) === '/') url = HOST + url;
-    url = String(url).replace(/&amp;/g, '&');
-
-    // 预热全链：manifest 首拉可能 500（CDN 按需回源），重试到 200 再交给播放器；
-    // 顺带 KEY + 首分片 Range 预热（真黄果 v7 先例）
-    let ok = false;
-    for (let i = 0; i < 3; i++) {
-        const m = req(url);
-        if (m && m.indexOf('#EXTM3U') >= 0) {
-            ok = true;
-            const ku = (m.match(/URI="([^"]+)"/) || [])[1];
-            if (ku) req(String(ku).replace(/&amp;/g, '&'));
-            const seg = (m.split('\n').filter(function (l) { return l && l.charAt(0) !== '#'; })[0]) || '';
-            if (seg.indexOf('http') === 0) req(seg.replace(/&amp;/g, '&'), { headers: { 'Range': 'bytes=0-65535' } });
-            break;
-        }
-        wait(300);
+    const ck = did + '-' + no;
+    let url = EP_CACHE[ck] || '';
+    if (!url) {
+        const d = json(HOST + '/api/v1/drama/' + did + '/ep/' + no);
+        url = (d && (d.playbackUrl || d.videoUrl || d.manifestUrl)) || '';
+        if (!url) return JSON.stringify({ parse: 0, jx: 0, url: '' });
+        if (url.charAt(0) === '/') url = HOST + url;
+        url = String(url).replace(/&amp;/g, '&');
+        EP_CACHE[ck] = url;
     }
-    if (!ok) return JSON.stringify({ parse: 0, jx: 0, url: 'https://liz03.com/#取流失败-请稍后重试-' + Date.now() });
 
     return JSON.stringify({
         parse: 0,
