@@ -1,1 +1,531 @@
-{"spider":"https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js","logo":"https://imgcdn.u8-jj1dth16b1n1aay.xyz/pic/00d5ee517382d6f81c18e4413c27d645.jpg","sites":[{"key":"4do-1","name":"4do·1快","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"4do-2","name":"4do·2核","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"4do-3","name":"4do·3cf","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"4do-4","name":"4do·4量","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"4do-5","name":"4do·5代","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"xyunso1","name":"Xyunso·1快","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://xy05.cc\"}"},{"key":"xyunso2","name":"Xyunso·2核","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://xy05.cc\"}"},{"key":"xyunso3","name":"Xyunso·3cf","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://xy05.cc\"}"},{"key":"xyunso4","name":"Xyunso·4量","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://xy05.cc\"}"},{"key":"xyunso5","name":"Xyunso·5代","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://xy05.cc\"}"},{"key":"scg1","name":"SCG·1快","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"scg2","name":"SCG·2核","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"scg3","name":"SCG·3cf","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"scg4","name":"SCG·4量","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"scg5","name":"SCG·5代","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"itstar1","name":"本色·1快","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://m-qat.itstar.tw\"}"},{"key":"itstar2","name":"本色·2核","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://m-qat.itstar.tw\"}"},{"key":"itstar3","name":"本色·3cf","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://m-qat.itstar.tw\"}"},{"key":"itstar4","name":"本色·4量","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://m-qat.itstar.tw\"}"},{"key":"itstar5","name":"本色·5代","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://m-qat.itstar.tw\"}"},{"key":"miji1","name":"秘密·1快","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js","searchable":1,"quickSearch":0,"filterable":1,"ext":"{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}","timeout":60},{"key":"miji2","name":"秘密·2核","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js","searchable":1,"quickSearch":0,"filterable":1,"ext":"{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}","timeout":60},{"key":"miji3","name":"秘密·3cf","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js","searchable":1,"quickSearch":0,"filterable":1,"ext":"{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}","timeout":60},{"key":"miji4","name":"秘密·4量","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js","searchable":1,"quickSearch":0,"filterable":1,"ext":"{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}","timeout":60},{"key":"miji5","name":"秘密·5代","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js","searchable":1,"quickSearch":0,"filterable":1,"ext":"{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}","timeout":60},{"key":"semao375-1","name":"色猫375·1快","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://www.semao378.xyz\"}"},{"key":"semao375-2","name":"色猫375·2核","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://www.semao378.xyz\"}"},{"key":"semao375-3","name":"色猫375·3cf","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://www.semao378.xyz\"}"},{"key":"semao375-4","name":"色猫375·4量","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://www.semao378.xyz\"}"},{"key":"semao375-5","name":"色猫375·5代","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60,"ext":"{\"base\":\"https://www.semao378.xyz\"}"},{"key":"hgdj1","name":"黄果短剧·1快(fastly)","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js","searchable":1,"quickSearch":1,"filterable":1,"ext":"{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}","timeout":60},{"key":"hgdj2","name":"黄果短剧·2核(gcore)","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js","searchable":1,"quickSearch":1,"filterable":1,"ext":"{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}","timeout":60},{"key":"hgdj3","name":"黄果短剧·3cf(testingcf)","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js","searchable":1,"quickSearch":1,"filterable":1,"ext":"{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}","timeout":60},{"key":"hgdj4","name":"黄果短剧·4量(quantil)","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js","searchable":1,"quickSearch":1,"filterable":1,"ext":"{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}","timeout":60},{"key":"hgdj5","name":"黄果短剧·5代(gh-proxy)","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js","searchable":1,"quickSearch":1,"filterable":1,"ext":"{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}","timeout":60},{"key":"hg21","name":"真黄果·1快","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"hg22","name":"真黄果·2核","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"hg23","name":"真黄果·3cf","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"hg24","name":"真黄果·4量","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"hg25","name":"真黄果·5代","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"aikan-1","name":"爱看视频·1快","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"aikan-2","name":"爱看视频·2核","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"aikan-3","name":"爱看视频·3cf","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"aikan-4","name":"爱看视频·4量","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60},{"key":"aikan-5","name":"爱看视频·5代","type":3,"api":"https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js","searchable":1,"quickSearch":1,"filterable":1,"timeout":60}]}
+{
+ "spider": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+ "logo": "https://imgcdn.u8-jj1dth16b1n1aay.xyz/pic/00d5ee517382d6f81c18e4413c27d645.jpg",
+ "sites": [
+  {
+   "key": "4do-1",
+   "name": "4do·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "4do-2",
+   "name": "4do·2核",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "4do-3",
+   "name": "4do·3cf",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "4do-4",
+   "name": "4do·4量",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "4do-5",
+   "name": "4do·5代",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "xyunso1",
+   "name": "Xyunso·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://xy05.cc\"}"
+  },
+  {
+   "key": "xyunso2",
+   "name": "Xyunso·2核",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://xy05.cc\"}"
+  },
+  {
+   "key": "xyunso3",
+   "name": "Xyunso·3cf",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://xy05.cc\"}"
+  },
+  {
+   "key": "xyunso4",
+   "name": "Xyunso·4量",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://xy05.cc\"}"
+  },
+  {
+   "key": "xyunso5",
+   "name": "Xyunso·5代",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://xy05.cc\"}"
+  },
+  {
+   "key": "scg1",
+   "name": "SCG·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "scg2",
+   "name": "SCG·2核",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "scg3",
+   "name": "SCG·3cf",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "scg4",
+   "name": "SCG·4量",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "scg5",
+   "name": "SCG·5代",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "itstar1",
+   "name": "本色·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+  },
+  {
+   "key": "itstar2",
+   "name": "本色·2核",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+  },
+  {
+   "key": "itstar3",
+   "name": "本色·3cf",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+  },
+  {
+   "key": "itstar4",
+   "name": "本色·4量",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+  },
+  {
+   "key": "itstar5",
+   "name": "本色·5代",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+  },
+  {
+   "key": "miji1",
+   "name": "秘密·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js",
+   "searchable": 1,
+   "quickSearch": 0,
+   "filterable": 1,
+   "ext": "{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "miji2",
+   "name": "秘密·2核",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js",
+   "searchable": 1,
+   "quickSearch": 0,
+   "filterable": 1,
+   "ext": "{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "miji3",
+   "name": "秘密·3cf",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js",
+   "searchable": 1,
+   "quickSearch": 0,
+   "filterable": 1,
+   "ext": "{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "miji4",
+   "name": "秘密·4量",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js",
+   "searchable": 1,
+   "quickSearch": 0,
+   "filterable": 1,
+   "ext": "{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "miji5",
+   "name": "秘密·5代",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js",
+   "searchable": 1,
+   "quickSearch": 0,
+   "filterable": 1,
+   "ext": "{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "semao375-1",
+   "name": "色猫375·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://www.semao378.xyz\"}"
+  },
+  {
+   "key": "semao375-2",
+   "name": "色猫375·2核",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://www.semao378.xyz\"}"
+  },
+  {
+   "key": "semao375-3",
+   "name": "色猫375·3cf",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://www.semao378.xyz\"}"
+  },
+  {
+   "key": "semao375-4",
+   "name": "色猫375·4量",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://www.semao378.xyz\"}"
+  },
+  {
+   "key": "semao375-5",
+   "name": "色猫375·5代",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://www.semao378.xyz\"}"
+  },
+  {
+   "key": "hgdj1",
+   "name": "黄果短剧·1快(fastly)",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "ext": "{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "hgdj2",
+   "name": "黄果短剧·2核(gcore)",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "ext": "{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "hgdj3",
+   "name": "黄果短剧·3cf(testingcf)",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "ext": "{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "hgdj4",
+   "name": "黄果短剧·4量(quantil)",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "ext": "{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "hgdj5",
+   "name": "黄果短剧·5代(gh-proxy)",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "ext": "{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "hg21",
+   "name": "真黄果·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "hg22",
+   "name": "真黄果·2核",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "hg23",
+   "name": "真黄果·3cf",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "hg24",
+   "name": "真黄果·4量",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "hg25",
+   "name": "真黄果·5代",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "aikan-1",
+   "name": "爱看视频·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "aikan-2",
+   "name": "爱看视频·2核",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "aikan-3",
+   "name": "爱看视频·3cf",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "aikan-4",
+   "name": "爱看视频·4量",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "aikan-5",
+   "name": "爱看视频·5代",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "lizhi1",
+   "name": "荔枝短剧·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@7c7f4fce29bc6d1335305f54a280426cab326976/lizhi.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "lizhi2",
+   "name": "荔枝短剧·2核",
+   "type": 3,
+   "api": "https://gcore.jsdelivr.net/gh/wuye776/TV@7c7f4fce29bc6d1335305f54a280426cab326976/lizhi.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "lizhi3",
+   "name": "荔枝短剧·3cf",
+   "type": 3,
+   "api": "https://testingcf.jsdelivr.net/gh/wuye776/TV@7c7f4fce29bc6d1335305f54a280426cab326976/lizhi.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "lizhi4",
+   "name": "荔枝短剧·4量",
+   "type": 3,
+   "api": "https://quantil.jsdelivr.net/gh/wuye776/TV@7c7f4fce29bc6d1335305f54a280426cab326976/lizhi.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "lizhi5",
+   "name": "荔枝短剧·5代",
+   "type": 3,
+   "api": "https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/7c7f4fce29bc6d1335305f54a280426cab326976/lizhi.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  }
+ ]
+}
