@@ -1,101 +1,111 @@
 {
-  "spider": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
-  "logo": "https://imgcdn.u8-jj1dth16b1n1aay.xyz/pic/00d5ee517382d6f81c18e4413c27d645.jpg",
-  "sites": [
-    {
-      "key": "4do",
-      "name": "4do",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60
-    },
-    {
-      "key": "xyunso1",
-      "name": "Xyunso·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60,
-      "ext": "{\"base\":\"https://xy05.cc\"}"
-    },
-    {
-      "key": "scg",
-      "name": "SCG·直播",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60
-    },
-    {
-      "key": "itstar1",
-      "name": "本色·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60,
-      "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
-    },
-    {
-      "key": "miji",
-      "name": "秘密研究所",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js",
-      "searchable": 1,
-      "quickSearch": 0,
-      "filterable": 1,
-      "ext": "{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}",
-      "timeout": 60
-    },
-    {
-      "key": "semao375",
-      "name": "色猫375",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 0,
-      "ext": "{\"base\":\"https://www.semao378.xyz\"}",
-      "timeout": 60
-    },
-    {
-      "key": "hgdj1",
-      "name": "黄果短剧·1快(fastly)",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "ext": "{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}",
-      "timeout": 60
-    },
-    {
-      "key": "hg21",
-      "name": "真黄果·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60
-    },
-    {
-      "key": "aikan",
-      "name": "爱看视频·1快",
-      "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "timeout": 60
-    }
-  ]
+ "spider": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+ "logo": "https://imgcdn.u8-jj1dth16b1n1aay.xyz/pic/00d5ee517382d6f81c18e4413c27d645.jpg",
+ "sites": [
+  {
+   "key": "4do",
+   "name": "4do",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@d359a7f752b58f6a55afba57b36e6663a1981769/4do.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "xyunso1",
+   "name": "Xyunso·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ad936cb4ee57cfac7a0c6ce67ba9759792806347/xyunso.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://xy05.cc\"}"
+  },
+  {
+   "key": "scg",
+   "name": "SCG·直播",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@51a422f26aac33a213157221555e3dc2f6948615/scg.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "itstar1",
+   "name": "本色·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@dd1179f82ff25a0fd2723e1f13d916dd5095624a/itstar.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60,
+   "ext": "{\"base\":\"https://m-qat.itstar.tw\"}"
+  },
+  {
+   "key": "miji",
+   "name": "秘密研究所",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js",
+   "searchable": 1,
+   "quickSearch": 0,
+   "filterable": 1,
+   "ext": "{\"host\":\"https://vke-urwg-3wa.xfleet-jul03.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "semao375",
+   "name": "色猫375",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@f194276088c6a1e07c2e9d7e8d1e519aba283395/semao375.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 0,
+   "ext": "{\"base\":\"https://www.semao378.xyz\"}",
+   "timeout": 60
+  },
+  {
+   "key": "hgdj1",
+   "name": "黄果短剧·1快(fastly)",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@2f5bd8264a9e9ad04e7399c8321fd2eff641e9d3/huangguoac.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "ext": "{\"base\": \"https://a1dz.eqbxqk5v3.cc\"}",
+   "timeout": 60
+  },
+  {
+   "key": "hg21",
+   "name": "真黄果·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "aikan",
+   "name": "爱看视频·1快",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@aceb697e754efdc9d7a416576ae0719c969a34c4/aikan.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  },
+  {
+   "key": "lizhi",
+   "name": "荔枝短剧",
+   "type": 3,
+   "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@7c7f4fce29bc6d1335305f54a280426cab326976/lizhi.js",
+   "searchable": 1,
+   "quickSearch": 1,
+   "filterable": 1,
+   "timeout": 60
+  }
+ ]
 }
