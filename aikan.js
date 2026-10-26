@@ -1,13 +1,18 @@
-// 爱看视频 (mm.9999999993.cc → 289xx.cc) · 影视仓 type:3 零服务器 spider
+// 爱看视频 · 影视仓 type:3 零服务器 spider（主域 2026-10-26 起 = 292xx.cc；mm.9999999993.cc 为门域）
 // 数据通道：MacCMS v10 JSON API（25 类）+ HTML 兜底（1/2/3/5 四类 API 屏蔽，走 /t/<id>-<pg>/）
 // 封面：API 列表无图 → ac=detail 批量补图；HTML 类直接用 data-original（imgcdn 文本生图，实为 JPEG）
-// v1 2026-10-25
+// v4 2026-10-26 换域自愈重写（289xx → 292xx 事故）
 
 var UA = 'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 Chrome/124.0.6367.82 Mobile Safari/537.36';
 
-// 主域 289xx.cc（mm.9999999993.cc 是前台门，301 到根）。门域名轮换时自动跟随 301 换域。
-var HOSTS = ['http://289xx.cc', 'http://mm.9999999993.cc'];
+// 2026-10-26 站方换域：289xx.cc 已 301 → 292xx.cc，且 301 丢路径（Location: http://292xx.cc）。
+// 壳层若自动跟跳，API 请求会落到首页 HTML → JSON 解析失败 → 列表全空（"只有分类没有资源"）。
+// v4 判据：主机必须"API 路径直出 JSON"才算可用（能看见 301 才自愈的老写法在自动跟跳壳层上是瞎的）。
+// init 零网络；首次取数时惰性解析 + 失败重解析 + NNNxx.cc 换号扫。
+var HOSTS = ['http://292xx.cc', 'http://289xx.cc', 'http://mm.9999999993.cc'];
 var HOST_OK = '';
+var DEEP_DONE = 0;
+var FAILS = 0;   // 连续取数失败计数，防断网时每次点击都重扫
 
 var APIP = '/api.php/provide/vod/';
 
@@ -89,7 +94,7 @@ function locOf(r) {
     return h.location || h.Location || '';
 }
 
-// 跟 301/302 并做域名自愈：门域跳新域时改写 HOST_OK；无 Location 头则轮换 HOSTS 兜底
+// 跟 301/302 并做域名自愈：只改写主机名，路径原样保留（站方 301 丢路径，不能照抄 Location）
 function reqSmart(url) {
     var cur = url;
     for (var i = 0; i < 3; i++) {
@@ -99,8 +104,8 @@ function reqSmart(url) {
             var loc = locOf(r);
             var m = loc ? loc.match(/^(https?:\/\/[^\/\s]+)/i) : null;
             if (m) {
-                HOST_OK = m[1];
-                cur = cur.replace(/^(https?:\/\/[^\/\s]+)/i, function () { return m[1]; });
+                HOST_OK = m[1].replace(/\/+$/, '');
+                cur = cur.replace(/^(https?:\/\/[^\/\s]+)/i, function () { return HOST_OK; });
                 continue;
             }
             var alt = altHost(url);
@@ -122,13 +127,19 @@ function altHost(url) {
 }
 
 function apiGet(qs) {
+    ensureHost();
     var r = reqSmart(HOST_OK + APIP + '?' + qs);
-    var b = r.body || '';
-    if (b.length < 10) return null;
-    var d = null;
-    try { d = JSON.parse(b); } catch (e) { return null; }
-    if (!d || d.code !== 1 || !d.list) return null;
-    return d;
+    if (isApiJson(r.body)) { FAILS = 0; return JSON.parse(r.body); }
+    // 主域失活 / 被壳层跟跳到首页 → 清空重解析（必要时深扫一次）再取一次
+    if (FAILS >= 2) return null;   // 断网态：不再反复扫描，直接空返回
+    HOST_OK = '';
+    var ok = resolveHost(false);
+    if (!ok && !DEEP_DONE) { DEEP_DONE = 1; ok = resolveHost(true); }
+    if (!ok) { FAILS++; HOST_OK = HOSTS[0]; return null; }
+    r = reqSmart(HOST_OK + APIP + '?' + qs);
+    if (isApiJson(r.body)) { FAILS = 0; return JSON.parse(r.body); }
+    FAILS++;
+    return null;
 }
 
 // 手写 base64（urlsafe 优先，兼容标准表）+ UTF-8 还原（QuickJS 无 atob/TextDecoder）
@@ -162,20 +173,60 @@ function titleFromCover(cover) {
     return b64dec(t);
 }
 
-function pickHost() {
-    var list = HOSTS.slice();
-    for (var i = 0; i < list.length; i++) {
-        var r = request(list[i] + APIP + '?ac=list', {});
-        var c = codeOf(r);
-        if (c === 301 || c === 302) {
-            var loc = locOf(r);
-            var m = loc ? loc.match(/^(https?:\/\/[^\/\s]+)/i) : null;
-            if (m) { HOST_OK = m[1]; return; }
-        }
-        if (bodyOf(r).indexOf('"code":1') >= 0) { HOST_OK = list[i]; return; }
-    }
-    HOST_OK = HOSTS[0];
+// API 响应必须是 JSON 且 code=1 才算真到达（HTML = 被跟跳落到首页，判死）
+function isApiJson(b) {
+    if (!b || b.length < 10) return false;
+    if (String(b).replace(/^\s+/, '').charAt(0) !== '{') return false;
+    try { var d = JSON.parse(b); return !!(d && d.code === 1 && d.list); } catch (e) { return false; }
 }
+
+function probeApi(host) {
+    var h = String(host).replace(/\/+$/, '');
+    var r = request(h + APIP + '?ac=list', {});
+    if (isApiJson(bodyOf(r))) return h;
+    var loc = locOf(r);
+    var m = loc ? String(loc).match(/^(https?:\/\/[^\/\s]+)/i) : null;
+    if (m) {
+        var h2 = m[1].replace(/\/+$/, '');
+        if (h2 !== h && isApiJson(bodyOf(request(h2 + APIP + '?ac=list', {})))) return h2;
+    }
+    return '';
+}
+
+// NNNxx.cc 换号网：289→292 这种相邻换号直接捞回来
+function sweepHosts() {
+    var base = [], out = [];
+    for (var i = 0; i < HOSTS.length; i++) {
+        var m = String(HOSTS[i]).match(/(\d{2,4})xx\.cc/i);
+        if (m) base.push(parseInt(m[1], 10));
+    }
+    for (var d = 1; d <= 15; d++) {
+        for (var k = 0; k < base.length; k++) {
+            if (base[k] + d > 0) out.push('http://' + (base[k] + d) + 'xx.cc');
+            if (base[k] - d > 0) out.push('http://' + (base[k] - d) + 'xx.cc');
+        }
+    }
+    return out;
+}
+
+function resolveHost(deep) {
+    var pool = HOSTS.slice();
+    if (deep) pool = pool.concat(sweepHosts());
+    var cap = deep ? 20 : pool.length;
+    for (var i = 0; i < pool.length && i < cap; i++) {
+        var h = probeApi(pool[i]);
+        if (h) { HOST_OK = h; return true; }
+    }
+    return false;
+}
+
+function ensureHost() {
+    // 乐观启动：直接押 HOSTS[0]，取数失败时由 apiGet 触发解析（正常态省一次探测请求）
+    if (!HOST_OK) HOST_OK = HOSTS[0];
+    return HOST_OK;
+}
+
+function pickHost() { return ensureHost(); }
 
 function dateOnly(s) {
     return s ? String(s).substring(0, 10) : '';
@@ -286,6 +337,7 @@ function isHtmlCat(tid) {
 
 // ---------- HTML 通道（API 屏蔽的 1/2/3/5 类） ----------
 function htmlList(code, page) {
+    ensureHost();
     var url = HOST_OK + '/t/' + code + (page > 1 ? '-' + page : '') + '/';
     var r = reqSmart(url);
     var body = r.body || '';
@@ -306,6 +358,7 @@ function htmlList(code, page) {
 }
 
 function htmlDetail(code) {
+    ensureHost();
     var cid = 'h' + code;
     var cached = HTML_CACHE[cid] || null;
     var r = reqSmart(HOST_OK + '/p/' + code + '-1-1/');
@@ -360,12 +413,8 @@ function extPg(ext) {
 
 export default {
     init(cfg) {
-        if (cfg && cfg.base) {
-            HOST_OK = String(cfg.base).replace(/\/+$/, '');
-        } else {
-            try { pickHost(); } catch (e) { HOST_OK = HOSTS[0]; }
-        }
-        if (!HOST_OK) HOST_OK = HOSTS[0];
+        // 零网络：主机解析挪到首次取数（ensureHost），init 只在给了 base 时记账
+        if (cfg && cfg.base) HOST_OK = String(cfg.base).replace(/\/+$/, '');
         return '';
     },
     home() {
