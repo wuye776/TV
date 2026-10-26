@@ -1,77 +1,107 @@
-爱看视频 · 五节点订阅地址（正式版 v1 · 2026-10-25）
-════════════════════════════════════════════════
+================================================================
+  爱看视频 · 五节点公网地址（直接抄，别改字符）
+  生成时间：2026-10-26（v4 · 换域自愈重写：289xx → 292xx）
+================================================================
 
-  门域：mm.9999999993.cc（301 → http://289xx.cc 站本体，spider 已内置门域自愈）
-  站体：289xx.cc（"爱看视频 FilmBox"，MacCMS v10 JSON API 直连）
-  远端仓库：wuye776/TV
-  spider js commit（aikan v1 键）：be4f440ca3dfb793fe5f1650c6123f8d3c3b3614
-  订阅 json commit：五节点=1b017727 / 单站=1b017727（同一 commit 内钉 aikan.js @3168505）
+【一、这是什么】
 
-────────────────────────────────────────────────
-【一、五节点订阅地址（影视仓→配置→添加接口，任选一条）】
-────────────────────────────────────────────────
+  同一份 spider（aikan.js），通过 5 条不同的 CDN 取件路线送到你电视上。
+  内容完全一样，区别只有速度。你家网络哪条快就用哪条，其余当备胎。
 
-  [1快] https://fastly.jsdelivr.net/gh/wuye776/TV@1b017727f460d183797635b8082461554a53103e/aikan-5node.json
-  [2核] https://gcore.jsdelivr.net/gh/wuye776/TV@1b017727f460d183797635b8082461554a53103e/aikan-5node.json
-  [3cf] https://testingcf.jsdelivr.net/gh/wuye776/TV@1b017727f460d183797635b8082461554a53103e/aikan-5node.json
-  [4量] https://quantil.jsdelivr.net/gh/wuye776/TV@1b017727f460d183797635b8082461554a53103e/aikan-5node.json
-  [5代] https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/1b017727f460d183797635b8082461554a53103e/aikan-5node.json
+  五节点 ≠ 五个都要点。是同一份东西的五条取件路，
+  你只需要用其中一条，剩下四条当备胎。
 
-  · 1快 最稳（国内 fastly CDN），先试它
-  · 全挂了用 5代（gh-proxy 直连 raw）
+  本文件只管爱看。要十站合体去 合并订阅/导入地址.txt。
 
-────────────────────────────────────────────────
-【二、单站订阅（只要一条线时用）】
-────────────────────────────────────────────────
+  ★ v4 改了什么（2026-10-26）：
+    站方换域 289xx.cc → 292xx.cc，且它那条 301 是"丢路径"转跳
+    （Location 只写 http://292xx.cc）。壳层若自动跟跳，API 请求
+    会落到首页 HTML → 列表全空（"只有分类没有资源"）。
+    v4 把主机判据改成"API 路径必须直出 JSON"，并加了 NNNxx.cc
+    换号自愈网；init 改为零网络，解析放到首次取数。
 
-  https://fastly.jsdelivr.net/gh/wuye776/TV@1b017727f460d183797635b8082461554a53103e/aikan-1site.json
+【二、五节点地址 · spider js（贴进「添加接口」当配置地址）】
 
-────────────────────────────────────────────────
-【三、导入步骤】
-────────────────────────────────────────────────
+  [js·1快]  https://fastly.jsdelivr.net/gh/wuye776/TV@82c1706d009a4fcad6e285af8adf308478f35512/aikan.js
+  [js·2核]  https://gcore.jsdelivr.net/gh/wuye776/TV@82c1706d009a4fcad6e285af8adf308478f35512/aikan.js
+  [js·3cf]  https://testingcf.jsdelivr.net/gh/wuye776/TV@82c1706d009a4fcad6e285af8adf308478f35512/aikan.js
+  [js·4量]  https://quantil.jsdelivr.net/gh/wuye776/TV@82c1706d009a4fcad6e285af8adf308478f35512/aikan.js
+  [js·5代]  https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/82c1706d009a4fcad6e285af8adf308478f35512/aikan.js
 
-  1. 影视仓 → 配置 → 添加接口 → 粘贴上面任意一条 → 确定
-  2. 完全退出影视仓进程（后台划掉）→ 重新打开
-  3. 首页应出现 30 个分类：最近更新 / 自拍 / 欧M专区 / W曝黑L / 国C专区 /
-     主播网红 / X虐Z服 / 日h专区 / 无M专区 / 中W字幕 / MD传媒 / L伦J情 /
-     激q动漫 / 中字动漫 / 3D次元 / C媒厂商 / 次元动漫 / 其他 / 蜜T传媒 /
-     星K无线 / 天M传媒 / H家华人 / SK传媒 / DX传媒 / XJ传媒 / qq传媒 /
-     TXVlog / 无M动漫 / JD影业 / id传媒
-  4. 点分类右上角"筛选"→ 标签筛选（91 个，API 类全支持；国C/日h/C媒/次元四类
-     为站方 API 屏蔽类，走网页通道，无标签筛选属正常）
+【三、单站订阅地址（只要一个站，电视端最省事）】
 
-────────────────────────────────────────────────
-【四、v1 架构（相对其他站的差异点）】
-────────────────────────────────────────────────
+  这是订阅 json，里面只挂本站一个节点：
 
-  ✓ 数据主通道 = 站方 MacCMS v10 JSON API（/api.php/provide/vod/）：
-    ac=list 翻页 + ac=detail&ids=批量20 取封面/详情，两请求一页，带 LRU 缓存
-  ✓ 兜底通道 = 网页爬取 /t/<id>-<pg>/：分类 1/2/3/5 站方 API 屏蔽（t=2 total=0），
-    走 HTML 卡片解析，标题从封面 URL 的 b64 段解码（站方反爬把标题藏进封面图 URL）
-  ✓ 域名自愈：门域 mm.9999999993.cc 所有路径 301 → 289xx.cc；spider 探活失败或
-    遇 301 自动改写 HOST；init({base:新域}) 可注入新门域
-  ✓ 取流：m3u8 在 imgcdn.u8-*.xyz/sd/<md5>.m3u8，分片在 xhscdn（无 Referer/UA 防护），
-    KEY 同域 200，AES-128 播放器原生解
-  ✓ 封面 = aaa.img-*.xyz/text/<md5>.txt 实为 JPEG 字节（content-type 骗人的 text/plain），
-    Glide 按魔数识别，直传即可，无需包装
-  ✓ 搜索：API wd= 全站 75816 部，pg 翻页支持；屏蔽类（1/2/3/5）搜不到属站方限制
+  [1快]  https://1快.jsdelivr.net/gh/wuye776/TV@491d18ced41ad6c7377bfe2665a2a347c31a21a3/aikan-1site.json
+  [2核]  https://2核.jsdelivr.net/gh/wuye776/TV@491d18ced41ad6c7377bfe2665a2a347c31a21a3/aikan-1site.json
+  [3cf]  https://3cf.jsdelivr.net/gh/wuye776/TV@491d18ced41ad6c7377bfe2665a2a347c31a21a3/aikan-1site.json
+  [4量]  https://4量.jsdelivr.net/gh/wuye776/TV@491d18ced41ad6c7377bfe2665a2a347c31a21a3/aikan-1site.json
+  [gh-proxy]  https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/491d18ced41ad6c7377bfe2665a2a347c31a21a3/aikan-1site.json
 
-────────────────────────────────────────────────
-【五、文件对应关系】
-────────────────────────────────────────────────
+【四、五节点订阅地址（一个 json 里列 5 条线，断一条自动换）】
 
-  本地（爱看-type3/）              远端（wuye776/TV）
-  aikan.js（sha256 92e436ef） →   aikan.js          @31685051
-  01-爱看-单站.json           →   aikan-1site.json  @1b017727
-  02-爱看-五节点.json         →   aikan-5node.json  @1b017727
-  五节点地址.txt              →   （本文件，不进仓库）
+  [1快]  https://1快.jsdelivr.net/gh/wuye776/TV@847d3776cc38f44d106367c0277fe3807d802871/aikan-5node.json
+  [2核]  https://2核.jsdelivr.net/gh/wuye776/TV@847d3776cc38f44d106367c0277fe3807d802871/aikan-5node.json
+  [3cf]  https://3cf.jsdelivr.net/gh/wuye776/TV@847d3776cc38f44d106367c0277fe3807d802871/aikan-5node.json
+  [4量]  https://4量.jsdelivr.net/gh/wuye776/TV@847d3776cc38f44d106367c0277fe3807d802871/aikan-5node.json
+  [gh-proxy]  https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/847d3776cc38f44d106367c0277fe3807d802871/aikan-5node.json
 
-────────────────────────────────────────────────
-【六、验证口诀（给维护者）】
-────────────────────────────────────────────────
+  电视端推荐直接贴「五节点·1快」那一条：
+  首页会同时出现 爱看·1快 / 2核 / 3cf / 4量 / 5代 五个入口，
+  哪个能播点哪个，不用来回改配置。
 
-  ① push 后必须验 commit 树 blob sha（git hash-object 对比，201 不代表写对地方）
-  ② 改 spider 版本 = 订阅五节点逐一核 commit，一个都不能漏
-  ③ json 内容改动必须真 push 到 commit 可达树，@commit 快照才变
-  ④ 合并订阅 all-*.json 改单站后必须重新生成 push（本次已随 aikan 升 9站/17站 @366279fd）
-  ⑤ mount 目录写完必须 ls 验证
+  线路对照：
+    aikan-1   爱看视频·1快    fastly.jsdelivr.net
+    aikan-2   爱看视频·2核    gcore.jsdelivr.net
+    aikan-3   爱看视频·3cf    testingcf.jsdelivr.net
+    aikan-4   爱看视频·4量    quantil.jsdelivr.net
+    aikan-5   爱看视频·5代    gh-proxy 中转
+
+【五、换域名规则（一条记死）】
+
+  https://<前缀>.jsdelivr.net/gh/wuye776/TV@<COMMIT>/<文件名>
+
+  · 只有 <前缀> 能换：fastly / gcore / testingcf / quantil
+  · @ 后面那串 commit 和文件名是钉死的，动一个字符就 404
+  · 不要用 @main —— jsDelivr 有约 12 小时缓存，会拿到旧版
+  · [5代] 那条不走 jsDelivr，走 gh-proxy 反代 raw，格式固定：
+    https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/<COMMIT>/<文件名>
+
+【六、怎么在电视上导入】
+
+  1. 打开影视仓（3.3.8）→ 设置 → 接口管理 / 配置地址
+  2. 把上面任意一条地址整段粘进去（空格都不要多，别多回车）
+  3. 确定 → 返回首页 → 等它拉取（首次约 3–6 秒）
+  4. 首页出现「爱看视频」站点即成功
+
+  改过 js 之后：必须把影视仓进程划掉重启（js 是启动时读进内存的），
+  并且删掉旧站点重新添加（客户端会缓存 json）。
+
+【七、五条全连不上怎么办（最后的退路）】
+
+  gh-proxy 反代 raw，改版会自动生效：
+
+  https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/82c1706d009a4fcad6e285af8adf308478f35512/aikan.js
+  https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/491d18ced41ad6c7377bfe2665a2a347c31a21a3/aikan-1site.json
+  https://gh-proxy.com/https://raw.githubusercontent.com/wuye776/TV/847d3776cc38f44d106367c0277fe3807d802871/aikan-5node.json
+
+  纯文本反代，速度不快但基本都能通，适合当兜底。
+
+【八、commit 对照（出问题先核这个）】
+
+  spider js  aikan.js          82c1706d009a4fcad6e285af8adf308478f35512   (20409B, v4)
+  单站订阅   aikan-1site.json  491d18ced41ad6c7377bfe2665a2a347c31a21a3
+  五节点订阅 aikan-5node.json  847d3776cc38f44d106367c0277fe3807d802871
+  仓库 HEAD                    7dd1367b9c9ad2e304cfee9d1028a93b99110ed7
+
+  订阅行跟的是"文件自己最后那次改动"的 commit，两份不同是正常的。
+
+【九、备注】
+
+  30 个分类 + 91 个标签筛选。封面直连 imgcdn（v3 起不再走代理）。
+  站体 2026-10-26 起 = 292xx.cc（mm.9999999993.cc 只是门口，
+  289xx.cc 也已 301 到新站），spider v4 会在取数时自动认新域，
+  连 NNNxx.cc 换号都能自己捞回来。
+  API 屏蔽 4 类（C媒/国C/日h/次元），这四类走网页硬爬，能出。
+
+================================================================
