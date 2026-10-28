@@ -4,7 +4,7 @@
 //
 // api.json:
 //   { "type": 3, "api": "./js/huangguoac.js",
-//     "ext": { "base": "https://a1dz.eqbxqk5v3.cc" } }
+//     "ext": { "base": "https://ho3t.i7jc1lxzl.cc" } }
 //
 // 站点现状测绘（2026-10 实测）：
 //   旧接口 GET /api/videos?page=N 等全部变成 catch-all：
@@ -38,9 +38,9 @@ const UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, 
 // v7 域名池：https://huangguoac.net/ 发布页公布的线路 01/02/03。
 // 老的 huangguoac.com / .net / .com6 / wy60j19s.cc 已全废（连接重置或 404）。
 const HOSTS = [
-    'https://a1dz.eqbxqk5v3.cc',
-    'https://gfwfe.eqbxqk5v3.cc',
-    'https://i5vn9.eqbxqk5v3.cc'
+    'https://ho3t.i7jc1lxzl.cc',
+    'https://m9gtc.i7jc1lxzl.cc',
+    'https://q4nv5.i7jc1lxzl.cc'
 ];
 let BASE = HOSTS[0];
 let HEADERS = { 'User-Agent': UA, 'Referer': BASE + '/', 'Accept': 'text/html,application/xhtml+xml,application/json,*/*' };
