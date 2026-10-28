@@ -16,7 +16,27 @@
  */
 
 const UA = 'Mozilla/5.0 (Linux; Android 13; AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36';
-const HOST = 'https://liz03.com';
+// 站方用 liz0x.com 系列做同 CloudFront 分发轮转域名；主域 liz03.com 在部分出口被 RST，
+// 故设域名池 + 失败自动轮换（首选仍是 liz03，电视端零行为变化；沙箱/被针对时跳活域）。
+const HOSTS = [
+    'https://liz03.com',
+    'https://liz04.com',
+    'https://liz07.com',
+    'https://liz05.com',
+    'https://liz01.com',
+    'https://liz02.com',
+    'https://liz06.com',
+    'https://liz08.com',
+    'https://liz09.com'
+];
+let HOST = HOSTS[0];
+let HOST_OK = '';
+function nextHost() {
+    const i = HOSTS.indexOf(HOST_OK || HOST);
+    HOST = HOSTS[(i + 1) % HOSTS.length];
+    HOST_OK = '';
+    return HOST;
+}
 const SIZE = 50;
 
 const CATS = [
@@ -93,6 +113,8 @@ function request(url, opt) {
 }
 
 function req(url) {
+    const host = HOST_OK || HOST;
+    url = String(url).replace(/^https?:\/\/[^/]+/, host);
     try {
         const r = request(url, {
             method: 'GET',
@@ -100,8 +122,8 @@ function req(url) {
                 'User-Agent': UA,
                 'Accept': 'application/json, text/plain, */*',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
-                'Origin': HOST,
-                'Referer': HOST + '/'
+                'Origin': host,
+                'Referer': host + '/'
             }
         });
         if (r === null || r === undefined) return null;
@@ -131,14 +153,15 @@ function json(url) {
     for (let attempt = 0; attempt < back.length; attempt++) {
         if (back[attempt]) wait(back[attempt]);
         const t = req(url);
-        if (!t) continue;
+        if (!t) { nextHost(); continue; }
         let j = null;
         try { j = JSON.parse(t); } catch (e) { j = null; }
-        if (!j) continue;
+        if (!j) { nextHost(); continue; }
         if (j.success === false) {
             if (String(j.message || '').indexOf('频繁') >= 0) continue;
             return null;
         }
+        HOST_OK = HOST_OK || HOST;   // 本次成功，锁定当前活域
         return j.data !== undefined ? j.data : j;
     }
     return null;
