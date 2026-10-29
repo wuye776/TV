@@ -1,12 +1,15 @@
-// 真黄果短剧 type:3 spider v5
-// 站点: *.h2na6qa39.cc (泛子域, CloudFront, CN=*.h2na6qa39.cc)
-// 域名自愈: init 拉发布页 publish.js 解析 urls[] 插入池子, 探活切换
+// 真黄果短剧 type:3 spider v9
+// 站点: v8 期 *.h2na6qa39.cc 已全死(2026-10-29 实测 5/5 超时, DNS 解析到污染 IP 108.160.162.102)
+// 现站点: 随机子域.<主域>.cc 形态, 活口 hzgl2/k6woh/xs0l.jxqgmx5ga.cc (API 200 直出 JSON 实测)
+// 注意: 裸主域与大学子域前缀(nju.等) DNS 均不解析——发布页 publish.js 的 var urls 拼法已失效,
+//       新活口只能从发布页 HTML(huangguoai.ai 等)正文里的完整主机名提取。
+// 域名自愈: init 拉发布页 → publish.js urls[] 主域 + 页面正文完整主机名, 全部探活后切换
 // API: /api/videos/category/<ch> | /api/videos/tag/<中文> | /api/videos/<id>[?ep=N] | /api/posts | /api/search?q=
 // 铁律: 分类/标签/子分类全部进影视仓筛选(extend=tab+tag); tag 只吃中文不吃 slug
 var UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-var PUB_PAGES = ['https://huangguoai.pages.dev', 'https://huang-guo.pages.dev'];
-// 静态池: 实测快子域(nju/hit/fdu/zju 0.35-0.45s) + 官方 li1q
-var HOST_POOL = ['https://nju.h2na6qa39.cc', 'https://hit.h2na6qa39.cc', 'https://fdu.h2na6qa39.cc', 'https://zju.h2na6qa39.cc', 'https://li1q.h2na6qa39.cc'];
+var PUB_PAGES = ['https://huangguoai.pages.dev', 'https://huang-guo.pages.dev', 'https://huangguoai.ai'];
+// 静态池: 2026-10-29 实测活口(随机子域.主域), 旧 h2na6qa39 池全死勿回填
+var HOST_POOL = ['https://hzgl2.jxqgmx5ga.cc', 'https://k6woh.jxqgmx5ga.cc', 'https://xs0l.jxqgmx5ga.cc'];
 var HOST = HOST_POOL[0];
 var HOST_OK = false;
 // 吃瓜预热缓存: init 时同步拉 page1-3, category/posts 直接吃缓存(3页*30=90条本地筛)
@@ -102,6 +105,21 @@ function discoverHosts() {
             // push 到尾部(不 unshift): 裸 .cc 域被污染, 探活 30s 超时会拖死换域链
             if (HOST_POOL.indexOf(cands[c]) < 0) { HOST_POOL.push(cands[c]); added.push(cands[c]); }
         }
+    }
+    // 发布页正文完整主机抓取（2026-10-29 起的主路径）：站方改用 随机子域.<主域>.cc 形态，
+    // publish.js 的 urls[] 只给主域，裸域与大学前缀拼法已不解析——活口主机名只能从页面正文直接提取。
+    // 只收 .cc 主机（黄果家族全是 .cc），h2na6qa39 旧池已死勿回填；坏候选由 hostAlive 探活拒绝。
+    for (var q = 0; q < PUB_PAGES.length; q++) {
+        try {
+            var r2 = request(PUB_PAGES[q] + '/', { method: 'GET' });
+            var b2 = s(r2 && (r2.content !== undefined ? r2.content : r2.body !== undefined ? r2.body : r2));
+            var re2 = /[a-z0-9-]+(?:\.[a-z0-9-]+)+\.cc/g, m2;
+            while ((m2 = re2.exec(b2)) !== null) {
+                var host = 'https://' + m2[0];
+                if (host.indexOf('h2na6qa39') >= 0) continue;
+                if (HOST_POOL.indexOf(host) < 0) { HOST_POOL.push(host); added.push(host); }
+            }
+        } catch (e) { }
     }
     return added;
 }
