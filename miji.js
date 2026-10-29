@@ -95,10 +95,12 @@ function getTextSt(url) {
 }
 
 // 首页/列表页抓取：站点 DNS 有多个 A 记录且混有病节点，
-// 单次请求可能落进 615 字节的空壳页，多次重试即可绕开
+// 单次请求可能落进 615 字节的空壳页，多次重试即可绕开。
+// 2026-10-29 实证：站方 36 条 A 记录健康率跌至两三成（沙箱 10 连 2/10），
+// 114DNS 仅回 3 条 A（含全死 IP）→ 电视端粘死概率高，重试窗 3→5（快败型只耗 0.2-0.4s，健康命中由 >5000B 提前退出兜住）。
 function getPage(path) {
     let best = '';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
         let h = '';
         try { h = getTextSt(HOST + path); } catch (e) { h = ''; }
         if (h && h.length > best.length) best = h;
