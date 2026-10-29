@@ -1,5 +1,5 @@
 {
-  "spider": "https://fastly.jsdelivr.net/gh/wuye776/TV@82c1706d009a4fcad6e285af8adf308478f35512/aikan.js",
+  "spider": "https://fastly.jsdelivr.net/gh/wuye776/TV@2cbf91d31633839c866ad03cf9a00ce1141d8361/aikan.js",
   "logo": "https://imgcdn.u8-jj1dth16b1n1aay.xyz/pic/00d5ee517382d6f81c18e4413c27d645.jpg",
   "sites": [
     {
@@ -48,7 +48,7 @@
       "key": "miji",
       "name": "秘密研究所",
       "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@c9d641ad609572b13d8627428a19a46e07661e94/miji.js",
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@ecd168dd25fae77af7ddf0bb7b50523517f12783/miji.js",
       "searchable": 1,
       "quickSearch": 0,
       "filterable": 1,
@@ -81,7 +81,7 @@
       "key": "hg21",
       "name": "真黄果·1快",
       "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@9925d8bac0863acbf0f31bb4d3984d0437ad61ac/hg2.js",
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@816611ee2cc9f84d47a14551c3e333574c22d27a/hg2.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
@@ -91,7 +91,7 @@
       "key": "aikan",
       "name": "爱看视频·1快",
       "type": 3,
-      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@82c1706d009a4fcad6e285af8adf308478f35512/aikan.js",
+      "api": "https://fastly.jsdelivr.net/gh/wuye776/TV@2cbf91d31633839c866ad03cf9a00ce1141d8361/aikan.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
