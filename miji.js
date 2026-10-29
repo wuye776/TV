@@ -80,9 +80,10 @@ function getText(url) {
 
 // 带状态码的抓取：上游会限流（实测连打三次有两次 403），
 // 403 时重试一次（换连接换时间片），别当失败直接抛。
+// 2026-10-29 站方服务器抖动加剧（详情页连测 3 次成 1），重试窗 2→3 次提成功率。
 function getTextSt(url) {
     let res = null;
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
         try { res = request(url, { headers: HEADERS }); } catch (e) { res = null; }
         const st = res && (res.status || res.code);
         if (res && res.ok !== false && st !== 403) break;
