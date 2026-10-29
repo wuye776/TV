@@ -1,7 +1,9 @@
-// 爱看视频 · 影视仓 type:3 零服务器 spider（主域 2026-10-26 起 = 292xx.cc；mm.9999999993.cc 为门域）
+// 爱看视频 · 影视仓 type:3 零服务器 spider（主域 2026-10-29 起 = 217xx.cc；mm.9999999993.cc 为门域）
 // 数据通道：MacCMS v10 JSON API（25 类）+ HTML 兜底（1/2/3/5 四类 API 屏蔽，走 /t/<id>-<pg>/）
 // 封面：API 列表无图 → ac=detail 批量补图；HTML 类直接用 data-original（imgcdn 文本生图，实为 JPEG）
 // v4 2026-10-26 换域自愈重写（289xx → 292xx 事故）
+// v5 2026-10-29 主号再换：292xx 首页 301 → 217xx（跨度 -75，±15 换号扫够不着）。
+// 217xx API 实测直出 JSON（{"code":1,...}），移入 HOSTS 首位；289 移出（292±15 扫描可再生 289）。
 
 var UA = 'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 Chrome/124.0.6367.82 Mobile Safari/537.36';
 
@@ -9,7 +11,7 @@ var UA = 'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 Chrome/124.0.6367.8
 // 壳层若自动跟跳，API 请求会落到首页 HTML → JSON 解析失败 → 列表全空（"只有分类没有资源"）。
 // v4 判据：主机必须"API 路径直出 JSON"才算可用（能看见 301 才自愈的老写法在自动跟跳壳层上是瞎的）。
 // init 零网络；首次取数时惰性解析 + 失败重解析 + NNNxx.cc 换号扫。
-var HOSTS = ['http://292xx.cc', 'http://289xx.cc', 'http://mm.9999999993.cc'];
+var HOSTS = ['http://217xx.cc', 'http://292xx.cc', 'http://mm.9999999993.cc'];
 var HOST_OK = '';
 var DEEP_DONE = 0;
 var FAILS = 0;   // 连续取数失败计数，防断网时每次点击都重扫
