@@ -70,7 +70,7 @@ var PIC = PIC_HOST;
 var VIDEOS = {};      // id -> 视频对象(详情兜底)
 var PLCACHE = {};     // id -> { pl: playlist 原文 }
 var DOMAINS_OK = false;
-var DIAG = true;          // ext.diag = 1 时打开, 首页多一张"诊断"分类卡
+var DIAG = false;         // 关闭: 诊断分类已移除, 诊断只经 ext.diag=1 生效
 
 // ---------------- 基础工具 ----------------
 
@@ -554,7 +554,7 @@ function cats() {
     var out = [];
     for (var i = 0; i < REGIONS.length; i++) out.push({ type_id: REGIONS[i].id, type_name: REGIONS[i].name });
     out.push({ type_id: 'tag', type_name: '标签 >>' });
-    if (DIAG) out.push({ type_id: '__diag', type_name: '诊断' });
+    // 不加诊断分类: 多出来的 tab 会让部分壳的 filters 映射错位
     return out;
 }
 
@@ -653,30 +653,22 @@ function init(cfg) {
 }
 
 // 分类写死, 不依赖网络 -> 网络全挂时 tab 照样出
-// list 也在这里给: 首屏一次请求打底。壳的 homeVod 不一定被调用, 但 home 一定被调用,
-// 这是 4do/xyunso/色猫 三站的共同写法 —— home 里直接把首屏片单塞进去。
+// ★ 关键: home() 里绝对不能有网络请求。
+//   宿主调用 home 有超时(通常 10~30s), sync http 一卡就整个 home 抛超时 -> 连分类都没有。
+//   这是本轮"分类都没有"的根因: v4 在 home 里调了 firstList(), 网络一慢 tab 全灭。
 function home() {
     var f = {};
     for (var i = 0; i < REGIONS.length; i++) {
         f[REGIONS[i].id] = [{ key: 'tag', name: '标签', value: TAGS_PUB() }];
     }
     f['tag'] = [{ key: 'tag', name: '标签', value: TAGS_PUB() }];
-    if (DIAG) f['__diag'] = [];
-    var list = [];
-    try { list = firstList(); } catch (e) { list = []; }
-    return JSON.stringify({ class: cats(), filters: f, list: list });
+    return JSON.stringify({ class: cats(), filters: f });
 }
 
-// 首屏片单: 单次请求, 失败就空, 绝不抛
-function firstList() {
+// 首屏片单放这里。壳调 homeVod 时再走网络, 挂了也只是首屏空, 不影响分类。
+function homeVod() {
     var j = api('/video', { page: 1, pageSize: 20 });
     if (j && j.__auth) { establish(); j = api('/video', { page: 1, pageSize: 20 }); }
-    return listOf(j);
-}
-
-function homeVod() {
-    var j = api('/video', { page: 1, pageSize: 10 });
-    if (j && j.__auth) { establish(); j = api('/video', { page: 1, pageSize: 10 }); }
     return JSON.stringify({ list: listOf(j) });       // 硬规范 3: stringify
 }
 
