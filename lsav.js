@@ -299,8 +299,8 @@ function fetchRaw(url, opt) {
     o.method = o.method || 'GET';
     o.headers = o.headers || {};
     o.async = false;                       // 硬规范 1: 宿主不 pump 微任务, 必须同步
-    if (o.buffer === undefined) o.buffer = 2;   // 关键: 2=宿主把响应体转 base64 字符串再给 JS(密文/图片不过字符化通道)
-    if (o.timeout === undefined || o.timeout < 1000) o.timeout = 60000;   // 毫秒(站点 json 的 timeout:60 是秒, 两回事)
+    if (o.buffer === undefined) o.buffer = 1;   // 1=ByteArray(真字节数组). Connect.content() 的 case 2 是 fall-through 掉到 Json, 只认 1
+    if (o.timeout === undefined || o.timeout > 8000) o.timeout = 8000;   // 必须小于宿主默认 NetOptions.getTimeout()=10000, 否则壳先放弃
     if (!HTTP_FN) HTTP_FN = httpBinding();
     var f = HTTP_FN;
     var res = null;
@@ -342,18 +342,29 @@ function parseBody(res) {
 }
 
 function bytesOfRaw(body) {
-    // 把宿主给的三种形态统一成字节数组:
-    //   a) ArrayBuffer/Uint8Array (QuickJS 二进制通道)
-    //   b) 原始二进制字符串 (charCode == 字节, 影视仓 http() 常见形态)
-    //   c) base64 文本字符串 (Node 桥/部分壳)
+    // 把宿主给的形态统一成字节数组。buffer:1 = QuickJS.ByteArray, 到 JS 里是带 length 索引的对象。
     if (body === undefined || body === null) return null;
-    if (body && body.byteLength !== undefined && typeof body !== 'string') {
-        var u8 = new Uint8Array(body), a = [];
-        for (var i = 0; i < u8.length; i++) a.push(u8[i]);
-        return a;
-    }
-    if (typeof body === 'object' && body !== null && typeof body.length === 'number' && body.length > 0 && typeof body[0] === 'number') {
-        return body;                                   // 宿主直接给 JS 数字数组(buffer:1 ByteArray 兜底)
+    // ByteArray: 有 length 且每个下标是 0~255 的数字。逐字节复制, 避免直接把宿主对象当数组用。
+    if (typeof body === 'object') {
+        var n = (typeof body.length === 'number') ? body.length : -1;
+        if (n > 0 && typeof body[0] === 'number') {
+            var arr = [];
+            for (var k = 0; k < n; k++) {
+                var v = body[k];
+                arr.push(typeof v === 'number' ? (v & 0xff) : 0);
+            }
+            return arr;
+        }
+        if (body.byteLength !== undefined) {          // ArrayBuffer / TypedArray 兜底
+            var u8 = new Uint8Array(body), out = [];
+            for (var i = 0; i < u8.length; i++) out.push(u8[i]);
+            return out;
+        }
+        if (typeof body.toString === 'function') {    // Json 对象(误传时): 取字符串再走下面的文本分支
+            var t2 = String(body);
+            if (t2 && t2 !== '[object Object]') body = t2;
+        }
+        if (typeof body !== 'string') return null;
     }
     if (typeof body !== 'string') return null;
     var t = body.replace(/\s/g, '');
@@ -403,7 +414,7 @@ function establish() {
                 'Referer': BASE + '/'
             },
             body: body,
-            timeout: 60000
+            timeout: 8000
         });
     } catch (e) {
         LAST_ERR = 'E:EST_HTTP';
@@ -486,7 +497,7 @@ function api(path, params) {
                     'AuthDog': 'Bearer ' + TOKEN,
                     'Accept': 'application/json'
                 },
-                timeout: 60000
+                timeout: 8000
             });
             var j = jsonOf(res);
             if (j && j.error) {
@@ -647,8 +658,9 @@ function parseCfg(cfg) {
 }
 
 function init(cfg) {
-    parseCfg(cfg);
-    loadToken();
+    try { parseCfg(cfg); } catch (e1) { }
+    try { HTTP_FN = httpBinding(); } catch (e2) { HTTP_FN = null; }   // 先绑, 别等 fetchRaw 懒绑
+    try { loadToken(); } catch (e3) { }                               // token 只读本地, 不发网络
     return '';                     // 硬规范 3: 返回字符串
 }
 
@@ -774,7 +786,7 @@ function ossUrl(path) {
 }
 
 function fetchOnce(url, headers) {
-    var res = fetchRaw(url, { method: 'GET', headers: headers, timeout: 60000 });
+    var res = fetchRaw(url, { method: 'GET', headers: headers, timeout: 8000 });
     var body = res.content;
     if (typeof body === 'string') {
         // 宿主二进制通道: 纯 base64 字符集 -> 解码成文本
