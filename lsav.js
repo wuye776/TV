@@ -310,6 +310,7 @@ function fetchRaw(url, opt) {
     o.method = o.method || 'GET';
     o.headers = o.headers || {};
     o.async = false;                       // 硬规范 1: 宿主不 pump 微任务, 必须同步
+    if (o.buffer === undefined) o.buffer = 2;   // 关键: 2=宿主把响应体转 base64 字符串再给 JS(密文/图片不过字符化通道)
     if (o.timeout === undefined || o.timeout < 1000) o.timeout = 60000;   // 毫秒(站点 json 的 timeout:60 是秒, 两回事)
     if (!HTTP_FN) HTTP_FN = httpBinding();
     var f = HTTP_FN;
@@ -333,37 +334,63 @@ function parseBody(res) {
         }
     } catch (e) { }
     var body = res.content;
+    if (body === undefined || body === null) body = res.body;      // 4do 契约: 部分壳字段名不同
+    if (body === undefined || body === null) body = res.data;
 
-    // 二进制通道: 宿主把响应交给 base64 传过来(QuickJS 下是 ArrayBuffer)
-    var isBin = false;
-    if (body && body.byteLength !== undefined && typeof body !== 'string') isBin = true;
-    else if (typeof body === 'string' && !/[^A-Za-z0-9+/=\s]/.test(body) && body.length % 4 === 0 && body.length > 0) {
-        // 纯 base64 字符集且长度为4倍数 -> 可能是二进制通道
-        isBin = true;
+    if (body === undefined || body === null) return '';
+    if (typeof body === 'string') {
+        if (/^\s*[{[]/.test(body)) return body;              // 明文 JSON
+        if (body[0] === '#') return body;                    // m3u8 文本
+        var raw = bytesOfRaw(body);
+        if (raw) return decodeRaw(raw, ct);
+        if (ct.indexOf('encrypt') >= 0) {
+            try { return decryptEnvelope(body); } catch (eE) { return body; }
+        }
+        return body;                                         // 明文文本(错误 JSON 等)
     }
-    if (isBin) {
-        var raw = typeof body === 'string' ? base64ToBytes(body) : (function () {
-            var u8 = new Uint8Array(body), a = [];
-            for (var i = 0; i < u8.length; i++) a.push(u8[i]);
-            return a;
-        })();
-        // 明文 JSON/文本直接转字符串, 否则按信封解密
-        if (raw.length && raw[0] === 0x7b) return bytesUtf8(raw);          // {
-        if (raw.length && raw[0] === 0x5b) return bytesUtf8(raw);          // [
-        if (ct.indexOf('encrypt') >= 0) return decryptBytes(raw);
-        var guess = bytesUtf8(raw);
-        if (/^[\s]*[{[]/.test(guess)) return guess;
-        return decryptBytes(raw);
-    }
-    if (typeof body === 'string' && ct.indexOf('encrypt') >= 0) return decryptEnvelope(body);
-    return s(body);
+    var raw2 = bytesOfRaw(body);
+    return raw2 ? decodeRaw(raw2, ct) : s(body);
 }
 
-function base64ToBytes(b64) { return b64Bytes(b64); }
+function bytesOfRaw(body) {
+    // 把宿主给的三种形态统一成字节数组:
+    //   a) ArrayBuffer/Uint8Array (QuickJS 二进制通道)
+    //   b) 原始二进制字符串 (charCode == 字节, 影视仓 http() 常见形态)
+    //   c) base64 文本字符串 (Node 桥/部分壳)
+    if (body === undefined || body === null) return null;
+    if (body && body.byteLength !== undefined && typeof body !== 'string') {
+        var u8 = new Uint8Array(body), a = [];
+        for (var i = 0; i < u8.length; i++) a.push(u8[i]);
+        return a;
+    }
+    if (typeof body === 'object' && body !== null && typeof body.length === 'number' && body.length > 0 && typeof body[0] === 'number') {
+        return body;                                   // 宿主直接给 JS 数字数组(buffer:1 ByteArray 兜底)
+    }
+    if (typeof body !== 'string') return null;
+    var t = body.replace(/\s/g, '');
+    if (t.length >= 16 && t.length % 4 === 0 && !/[^A-Za-z0-9+/=]/.test(t)) return b64Bytes(t);
+    // 原始二进制字符串: 只要含任何不可打印字节就按字节串处理
+    var bin = false;
+    for (var j = 0; j < body.length; j++) {
+        var c = body.charCodeAt(j);
+        if (c < 9 || (c > 13 && c < 32) || c > 254) { bin = true; break; }
+    }
+    if (!bin) return null;
+    var out = [];
+    for (var k = 0; k < body.length; k++) out.push(body.charCodeAt(k) & 0xff);
+    return out;
+}
 
-function decryptBytes(rawBytes) {
-    var out = aesDecryptCBC(rawBytes, AES_KEY, AES_IV);
-    return bytesUtf8(out);
+function decodeRaw(raw, ct) {
+    if (!raw || !raw.length) return '';
+    var enc = ct.indexOf('encrypt') >= 0;              // 加密信封必须优先判定: 密文首字节随机, 不能靠魔法字节嗅探
+    if (enc) {
+        try { return bytesUtf8(aesDecryptCBC(raw, AES_KEY, AES_IV)); } catch (eD) { return ''; }
+    }
+    if (raw[0] === 0x7b || raw[0] === 0x5b || raw[0] === 0x23) return bytesUtf8(raw);   // { [ #
+    var g = bytesUtf8(raw);
+    if (/^\s*[{[]/.test(g) || g[0] === '#') return g;
+    try { return bytesUtf8(aesDecryptCBC(raw, AES_KEY, AES_IV)); } catch (eD2) { return g; }
 }
 
 function jsonOf(res) {
