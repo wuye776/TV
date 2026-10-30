@@ -1,6 +1,13 @@
-// 玖壹看片 (lsav / Nova) · 影视仓 type:3 零服务器 spider · v2
+// 玖壹看片 (lsav / Nova) · 影视仓 type:3 零服务器 spider · v3
 // 后端: lsav-api-gznaqa.ciftji.com  (Nova 家族, cookie 型 establish + AuthDog 认证)
 // 播放: OSS h265 fMP4 HLS, AES-128, key 内联 —— 全程不需要服务器
+//
+// v3 (2026-10-30 修"诊断卡都不出现"): 真因 = 宿主 buffer 参数
+//   establish 返回 application/json+encrypted 的 AES 密文; 宿主 http() 默认 buffer=0
+//   -> new String(bytes, UTF-8) -> 密文被 U+FFFD 破坏 -> 解密必败 -> TOKEN 空 -> 全站空
+//   修: fetchRaw() 里 o.buffer = 2 (宿主把响应体转 base64 字符串给 JS)
+//   依据: FongMi/TV quickjs/.../utils/Connect.java content() 四路分派 + NetOptions.buffer
+//   配套: parseBody 见 encrypt 优先 AES; bytesOfRaw 三形态统一; content||body||data 兜底
 //
 // v2 (2026-10-30 修"没有分类没有资源"):
 //   v1 在 Node 测试台全绿, 但真机全空。根因按顺序:
@@ -63,7 +70,7 @@ var PIC = PIC_HOST;
 var VIDEOS = {};      // id -> 视频对象(详情兜底)
 var PLCACHE = {};     // id -> { pl: playlist 原文 }
 var DOMAINS_OK = false;
-var DIAG = false;          // ext.diag = 1 时打开, 首页多一张"诊断"分类卡
+var DIAG = true;          // ext.diag = 1 时打开, 首页多一张"诊断"分类卡
 
 // ---------------- 基础工具 ----------------
 
