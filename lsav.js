@@ -670,15 +670,26 @@ function init(cfg) {
     return '';                     // 硬规范 3: 返回字符串
 }
 
-// 分类也是写死的, 不依赖网络 -> 网络全挂时 tab 照样出(便于区分"没网"和"解析错")
+// 分类写死, 不依赖网络 -> 网络全挂时 tab 照样出
+// list 也在这里给: 首屏一次请求打底。壳的 homeVod 不一定被调用, 但 home 一定被调用,
+// 这是 4do/xyunso/色猫 三站的共同写法 —— home 里直接把首屏片单塞进去。
 function home() {
     var f = {};
     for (var i = 0; i < REGIONS.length; i++) {
         f[REGIONS[i].id] = [{ key: 'tag', name: '标签', value: TAGS_PUB() }];
     }
     f['tag'] = [{ key: 'tag', name: '标签', value: TAGS_PUB() }];
-    if (DIAG) f['__diag'] = [];                      // 硬规范 6: filters 全分支对齐
-    return JSON.stringify({ class: cats(), filters: f });
+    if (DIAG) f['__diag'] = [];
+    var list = [];
+    try { list = firstList(); } catch (e) { list = []; }
+    return JSON.stringify({ class: cats(), filters: f, list: list });
+}
+
+// 首屏片单: 单次请求, 失败就空, 绝不抛
+function firstList() {
+    var j = api('/video', { page: 1, pageSize: 20 });
+    if (j && j.__auth) { establish(); j = api('/video', { page: 1, pageSize: 20 }); }
+    return listOf(j);
 }
 
 function homeVod() {
@@ -936,12 +947,7 @@ export default {
     sniffer: sniffer,
     action: action,
     proxy: proxy,
-    destroy: destroy,
-    // 诊断入口: 把内部状态打成一个分类卡, 电视端看一眼就知道卡在哪
-    // 用法: 临时把 ext.diag = 1 打开, 或直接在首页分类里看 "诊断" 卡
-    diag: function () {
-        return JSON.stringify({ list: [{ vod_id: 'diag', vod_name: diagText(), vod_pic: '', vod_remarks: '', vod_play_from: '', vod_play_url: '' }] });
-    }
+    destroy: destroy
 };
 
 function diagText() {
